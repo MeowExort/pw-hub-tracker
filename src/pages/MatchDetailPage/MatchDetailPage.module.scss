@@ -1,0 +1,123 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.title {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+}
+
+.date {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-xl);
+}
+
+.versus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xl);
+  padding: var(--space-lg);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  min-width: 160px;
+}
+
+.winner {
+  background: rgba(122, 217, 122, 0.1);
+  border: 1px solid var(--success);
+}
+
+.teamName {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+}
+
+.score {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+}
+
+.delta {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-left: var(--space-xs);
+}
+
+.vs {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.participants {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.sideTitle {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+}
+
+.table {
+  background: var(--card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+
+  th,
+  td {
+    padding: var(--space-sm) var(--space-md);
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    background: var(--bg-secondary);
+  }
+
+  tbody tr {
+    transition: background var(--transition-fast);
+
+    &:hover {
+      background: var(--card-hover);
+    }
+  }
+}
+
+.winRow {
+  border-left: 3px solid var(--success);
+}
+
+.lossRow {
+  border-left: 3px solid var(--danger);
+}

@@ -1,0 +1,28 @@
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-xl);
+  text-align: center;
+}
+
+.text {
+  color: var(--danger);
+  font-size: var(--font-size-sm);
+}
+
+.retry {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--primary);
+  font-size: var(--font-size-sm);
+  transition: all var(--transition-fast);
+
+  &:hover {
+    background: var(--primary);
+    color: #fff;
+  }
+}
