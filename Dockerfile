@@ -16,7 +16,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 # URL API-сервера (можно переопределить при сборке)
-ARG VITE_API_URL=https://api.arena.pw-hub.ru
+ARG VITE_API_URL=https://api.tracker.pw-hub.ru
 ENV VITE_API_URL=${VITE_API_URL}
 
 # Собираем фронтенд
