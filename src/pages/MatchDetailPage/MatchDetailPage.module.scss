@@ -121,3 +121,18 @@
 .lossRow {
   border-left: 3px solid var(--danger);
 }
+
+.classIcon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.idCell {
+  a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+}

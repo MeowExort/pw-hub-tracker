@@ -21,6 +21,26 @@
   gap: var(--space-sm);
 }
 
+.searchInput {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--text);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  min-width: 200px;
+
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+}
+
 .select {
   padding: var(--space-sm) var(--space-md);
   border: 1px solid var(--border);

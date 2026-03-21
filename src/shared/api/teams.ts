@@ -11,13 +11,27 @@ import type {
 /** Параметры запроса списка команд */
 export interface GetTeamsParams {
   zoneId?: number
+  sortBy?: 'ratingOrder' | 'ratingChaos'
   page?: number
   pageSize?: number
 }
 
 /** Получить список команд */
 export function getTeams(params?: GetTeamsParams) {
-  return apiGet<PaginatedResponse<TeamListItem>>('/api/arena/teams', params as Record<string, number | undefined>)
+  return apiGet<PaginatedResponse<TeamListItem>>('/api/arena/teams', params as unknown as Record<string, string | number | undefined>)
+}
+
+/** Параметры поиска команд */
+export interface SearchTeamsParams {
+  name: string
+  zoneId?: number
+  page?: number
+  pageSize?: number
+}
+
+/** Поиск команд по имени */
+export function searchTeams(params: SearchTeamsParams) {
+  return apiGet<PaginatedResponse<TeamListItem>>('/api/arena/teams/search', params as unknown as Record<string, string | number | undefined>)
 }
 
 /** Получить детали команды */

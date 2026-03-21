@@ -16,6 +16,9 @@ export interface TeamListItem {
   lastVisiteTimestamp: number
   updatedAt: string
   memberCount: number
+  ratingChaos?: number
+  ratingOrder?: number
+  realRating?: number
 }
 
 /** Боевая статистика */

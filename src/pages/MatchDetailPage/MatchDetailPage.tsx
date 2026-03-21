@@ -7,6 +7,7 @@ import {
   formatDateTime,
   getMatchPatternName,
   getClassName,
+  getClassIcon,
   formatScoreDelta,
 } from '@/shared/utils/format'
 import { useTeamName } from '@/shared/hooks/useTeamName'
@@ -76,15 +77,18 @@ export function MatchDetailPage() {
             <thead>
               <tr>
                 <th>Игрок</th>
-                <th>Класс</th>
                 <th>Δ Рейтинг</th>
               </tr>
             </thead>
             <tbody>
               {teamAParticipants.map((p) => (
                 <tr key={p.playerId} className={p.isWinner ? styles.winRow : styles.lossRow}>
-                  <td><Link to={`/players/${p.playerId}`}>{p.playerId}</Link></td>
-                  <td>{getClassName(p.playerCls)}</td>
+                  <td className={styles.idCell}>
+                    <Link to={`/players/${p.playerId}`}>
+                      <img src={getClassIcon(p.playerCls)} alt={getClassName(p.playerCls)} className={styles.classIcon} />
+                      {p.playerId}
+                    </Link>
+                  </td>
                   <td>{formatScoreDelta(p.scoreBefore, p.scoreAfter)}</td>
                 </tr>
               ))}
@@ -97,15 +101,18 @@ export function MatchDetailPage() {
             <thead>
               <tr>
                 <th>Игрок</th>
-                <th>Класс</th>
                 <th>Δ Рейтинг</th>
               </tr>
             </thead>
             <tbody>
               {teamBParticipants.map((p) => (
                 <tr key={p.playerId} className={p.isWinner ? styles.winRow : styles.lossRow}>
-                  <td><Link to={`/players/${p.playerId}`}>{p.playerId}</Link></td>
-                  <td>{getClassName(p.playerCls)}</td>
+                  <td className={styles.idCell}>
+                    <Link to={`/players/${p.playerId}`}>
+                      <img src={getClassIcon(p.playerCls)} alt={getClassName(p.playerCls)} className={styles.classIcon} />
+                      {p.playerId}
+                    </Link>
+                  </td>
                   <td>{formatScoreDelta(p.scoreBefore, p.scoreAfter)}</td>
                 </tr>
               ))}

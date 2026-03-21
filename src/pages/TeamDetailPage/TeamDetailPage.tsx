@@ -7,13 +7,13 @@ import { ErrorMessage } from '@/shared/ui/ErrorMessage'
 import { Pagination } from '@/shared/ui/Pagination'
 import {
   formatDateTime,
-  formatTimestamp,
-  getClassName,
   getMatchPatternName,
   calcWinRate,
   formatScoreDelta,
+  getServerName,
 } from '@/shared/utils/format'
 import { ScoreChart } from './ScoreChart'
+import { MembersSection } from './MembersSection'
 import { useTeamNames } from '@/shared/hooks/useTeamName'
 import styles from './TeamDetailPage.module.scss'
 
@@ -45,8 +45,8 @@ export function TeamDetailPage() {
   })
 
   const historyQuery = useQuery({
-    queryKey: ['teamScoreHistory', id, { matchPattern }],
-    queryFn: () => getTeamScoreHistory(id, { matchPattern, limit: 200 }),
+    queryKey: ['teamScoreHistory', id],
+    queryFn: () => getTeamScoreHistory(id, { limit: 200 }),
     enabled: !!id,
   })
 
@@ -68,7 +68,7 @@ export function TeamDetailPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.title}>{team.name}</h1>
-        <span className={styles.zone}>Зона {team.zoneId}</span>
+        <span className={styles.zone}>{getServerName(team.zoneId)}</span>
       </div>
 
       {/* Боевая статистика */}
@@ -104,10 +104,30 @@ export function TeamDetailPage() {
         </div>
       )}
 
-      {/* Фильтр типа боя */}
+      {/* График рейтинга */}
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>График рейтинга</h2>
+        {historyQuery.isLoading && <div className={styles.center}><Spinner size="sm" /></div>}
+        {historyQuery.data && historyQuery.data.length > 0 && (
+          <ScoreChart data={historyQuery.data} memberCount={team.members.length} />
+        )}
+        {historyQuery.data && historyQuery.data.length === 0 && (
+          <p className={styles.empty}>Нет данных истории рейтинга</p>
+        )}
+      </div>
+
+      {/* Участники */}
+      <div className={styles.section}>
+        {membersQuery.isLoading && <div className={styles.center}><Spinner size="sm" /></div>}
+        {membersQuery.data && (
+          <MembersSection members={membersQuery.data} />
+        )}
+      </div>
+
+      {/* Матчи */}
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>График рейтинга</h2>
+          <h2 className={styles.sectionTitle}>Матчи</h2>
           <select
             className={styles.select}
             value={matchPattern ?? ''}
@@ -121,52 +141,13 @@ export function TeamDetailPage() {
             <option value="1">Хаос</option>
           </select>
         </div>
-        {historyQuery.isLoading && <div className={styles.center}><Spinner size="sm" /></div>}
-        {historyQuery.data && historyQuery.data.length > 0 && (
-          <ScoreChart data={historyQuery.data} />
-        )}
-        {historyQuery.data && historyQuery.data.length === 0 && (
-          <p className={styles.empty}>Нет данных истории рейтинга</p>
-        )}
-      </div>
-
-      {/* Участники */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Участники</h2>
-        {membersQuery.isLoading && <div className={styles.center}><Spinner size="sm" /></div>}
-        {membersQuery.data && (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Класс</th>
-                <th>Последний бой</th>
-              </tr>
-            </thead>
-            <tbody>
-              {membersQuery.data.map((m) => (
-                <tr key={m.playerId}>
-                  <td>
-                    <Link to={`/players/${m.playerId}`}>{m.playerId}</Link>
-                  </td>
-                  <td>{getClassName(m.player.cls)}</td>
-                  <td className={styles.date}>{formatTimestamp(m.player.lastBattleTimestamp)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {/* Матчи */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Матчи</h2>
         {matchesQuery.isLoading && <div className={styles.center}><Spinner size="sm" /></div>}
         {matchesQuery.data && (
           <>
             <table className={styles.table}>
               <thead>
                 <tr>
+                  <th>Матч</th>
                   <th>Тип боя</th>
                   <th>Команда A</th>
                   <th>Команда B</th>
@@ -178,8 +159,10 @@ export function TeamDetailPage() {
                 {matchesQuery.data.items.map((match) => {
                   const isTeamA = match.teamAId === id
                   const won = match.winnerTeamId === id
+                  const lost = match.loserTeamId === id
                   return (
-                    <tr key={match.id} className={won ? styles.win : match.winnerTeamId ? styles.loss : ''}>
+                    <tr key={match.id} className={won ? styles.win : lost ? styles.loss : ''}>
+                      <td><Link to={`/matches/${match.id}`}>#{match.id}</Link></td>
                       <td>{getMatchPatternName(match.matchPattern)}</td>
                       <td>
                         <Link to={`/teams/${match.teamAId}`}>{matchTeamNames[match.teamAId] ?? match.teamAId}</Link>

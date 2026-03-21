@@ -24,6 +24,32 @@ export function getClassName(cls: number): string {
   return CLASS_NAMES[cls] ?? `Класс ${cls}`
 }
 
+/** Иконки классов персонажей */
+const CLASS_ICONS: Record<number, string> = {
+  0: '/assets/classes/tank.png',
+  1: '/assets/classes/mag.png',
+  2: '/assets/classes/sham.png',
+  3: '/assets/classes/dru.png',
+  4: '/assets/classes/var.png',
+  5: '/assets/classes/sin.png',
+  6: '/assets/classes/luk.png',
+  7: '/assets/classes/prist.png',
+  8: '/assets/classes/mk.png',
+  9: '/assets/classes/mist.png',
+  10: '/assets/classes/gost.png',
+  11: '/assets/classes/kosa.png',
+  12: '/assets/classes/gan.png',
+  13: '/assets/classes/pal.png',
+  14: '/assets/classes/sik.png',
+  15: '/assets/classes/bard.png',
+  16: '/assets/classes/dk.png',
+}
+
+/** Получить путь к иконке класса */
+export function getClassIcon(cls: number): string {
+  return CLASS_ICONS[cls] ?? ''
+}
+
 /** Названия паттернов матчей */
 const MATCH_PATTERN_NAMES: Record<number, string> = {
   0: 'Порядок',
@@ -33,6 +59,19 @@ const MATCH_PATTERN_NAMES: Record<number, string> = {
 /** Получить название паттерна матча */
 export function getMatchPatternName(pattern: number): string {
   return MATCH_PATTERN_NAMES[pattern] ?? `Тип ${pattern}`
+}
+
+/** Названия серверов по zoneId */
+const SERVER_NAMES: Record<number, string> = {
+  2: 'Центавр',
+  3: 'Фенрир',
+  5: 'Мицар',
+  29: 'Капелла',
+}
+
+/** Получить название сервера по zoneId */
+export function getServerName(zoneId: number): string {
+  return SERVER_NAMES[zoneId] ?? `Сервер ${zoneId}`
 }
 
 /** Форматировать дату */
