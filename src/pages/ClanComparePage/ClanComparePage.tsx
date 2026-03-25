@@ -36,7 +36,7 @@ const STAT_LABELS: Record<string, string> = {
 }
 
 /** Ключи характеристик для сравнения */
-const COMPARE_KEYS: (keyof PlayerProperty)[] = ['hp', 'attackDegree', 'defendDegree', 'vigour', 'peakGrade']
+const COMPARE_KEYS: (keyof PlayerProperty)[] = ['attackDegree', 'defendDegree', 'vigour', 'peakGrade']
 
 /** Вычислить сумму значений характеристики */
 function calcSum(players: PlayerProperty[], key: keyof PlayerProperty): number {
