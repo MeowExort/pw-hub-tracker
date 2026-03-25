@@ -23,6 +23,12 @@ export function MainLayout() {
             >
               Матчи
             </NavLink>
+            <NavLink
+              to="/clan-compare"
+              className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ''}`}
+            >
+              Кланы
+            </NavLink>
           </nav>
         </div>
       </header>

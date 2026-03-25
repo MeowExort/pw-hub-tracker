@@ -1,0 +1,1 @@
+export { ClanComparePage } from './ClanComparePage'

@@ -1,8 +1,9 @@
-import { apiGet } from './client'
+import { apiGet, apiPost } from './client'
 import type {
   PaginatedResponse,
   PlayerDetail,
   PlayerMatchItem,
+  PlayerProperty,
   ScoreHistoryItem,
 } from '@/shared/types/api'
 
@@ -38,4 +39,9 @@ export function getPlayerScoreHistory(playerId: number, params?: GetPlayerScoreH
     `/api/arena/players/${playerId}/score-history`,
     params as Record<string, number | undefined>,
   )
+}
+
+/** Получить характеристики игроков по массиву ID */
+export function getPlayerPropertiesByIds(playerIds: number[]) {
+  return apiPost<PlayerProperty[]>('/api/players/properties/by-ids', playerIds)
 }

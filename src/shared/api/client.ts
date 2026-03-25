@@ -44,11 +44,13 @@ export async function apiGet<T>(
 /**
  * POST-запрос к API.
  * @param path — путь эндпоинта
+ * @param body — тело запроса (будет сериализовано в JSON)
  */
-export async function apiPost<T>(path: string): Promise<T> {
+export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   })
   if (!res.ok) {
     throw new ApiError(res.status, `HTTP ${res.status}: ${res.statusText}`)

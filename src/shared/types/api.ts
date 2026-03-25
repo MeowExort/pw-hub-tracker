@@ -134,6 +134,37 @@ export interface ScoreHistoryItem {
   recordedAt: string
 }
 
+/** Свойства игрока (характеристики персонажа) */
+export interface PlayerProperty {
+  playerId: number
+  server: string
+  hp: number
+  mp: number
+  damageLow: number
+  damageHigh: number
+  damageMagicLow: number
+  damageMagicHigh: number
+  defense: number
+  resistance: number[]
+  attack: number
+  armor: number
+  attackSpeed: number
+  runSpeed: number
+  attackDegree: number
+  defendDegree: number
+  critRate: number
+  damageReduce: number
+  prayspeed: number
+  critDamageBonus: number
+  invisibleDegree: number
+  antiInvisibleDegree: number
+  vigour: number
+  antiDefenseDegree: number
+  antiResistanceDegree: number
+  peakGrade: number
+  updatedAt: string
+}
+
 /** Результат пересборки матчей */
 export interface RebuildResult {
   matchesCreated: number
