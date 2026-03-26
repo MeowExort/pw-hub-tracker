@@ -86,14 +86,14 @@ export function ClanComparePage() {
         <div className={styles.clanCard}>
           <div className={`${styles.clanName} ${styles.aura}`}>Aura</div>
           <div className={styles.clanCount}>
-            {auraPlayers.length} / {AURA_IDS.length} игроков
+            {auraPlayers.length} игроков
           </div>
         </div>
         <div className={styles.vs}>VS</div>
         <div className={styles.clanCard}>
           <div className={`${styles.clanName} ${styles.eternals}`}>Eternals</div>
           <div className={styles.clanCount}>
-            {eternalsPlayers.length} / {ETERNALS_IDS.length} игроков
+            {eternalsPlayers.length} игроков
           </div>
         </div>
       </div>
