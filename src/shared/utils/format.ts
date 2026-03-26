@@ -112,6 +112,11 @@ export function calcWinRate(wins: number, total: number): string {
   return `${Math.round((wins / total) * 100)}%`
 }
 
+/** Форматировать имя игрока */
+export function formatPlayerName(id: number, name?: string | null): string {
+  return name ? name : `Без имени (${id})`
+}
+
 /** Форматировать изменение рейтинга */
 export function formatScoreDelta(before: number | null, after: number | null): string {
   if (before === null || after === null) return '—'

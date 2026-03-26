@@ -12,6 +12,7 @@ import {
   getMatchPatternName,
   calcWinRate,
   formatScoreDelta,
+  formatPlayerName,
 } from '@/shared/utils/format'
 import { ScoreChart } from '../TeamDetailPage/ScoreChart'
 import { useTeamName, useTeamNames } from '@/shared/hooks/useTeamName'
@@ -62,7 +63,7 @@ export function PlayerDetailPage() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className={styles.title}>Игрок #{player.id}</h1>
+        <h1 className={styles.title}>{formatPlayerName(player.id, player.name)}</h1>
         <span className={styles.badge}>{getClassName(player.cls)}</span>
       </div>
 
@@ -140,6 +141,7 @@ export function PlayerDetailPage() {
             <table className={styles.table}>
               <thead>
                 <tr>
+                  <th>#ID</th>
                   <th>Тип боя</th>
                   <th>Команда A</th>
                   <th>Команда B</th>
@@ -151,6 +153,7 @@ export function PlayerDetailPage() {
               <tbody>
                 {matchesQuery.data.items.map((m) => (
                   <tr key={m.matchId} className={m.isWinner ? styles.win : styles.loss}>
+                    <td><Link to={`/matches/${m.matchId}`}>#{m.matchId}</Link></td>
                     <td>{getMatchPatternName(m.match.matchPattern)}</td>
                     <td><Link to={`/teams/${m.match.teamAId}`}>{matchTeamNames[m.match.teamAId] ?? m.match.teamAId}</Link></td>
                     <td><Link to={`/teams/${m.match.teamBId}`}>{matchTeamNames[m.match.teamBId] ?? m.match.teamBId}</Link></td>

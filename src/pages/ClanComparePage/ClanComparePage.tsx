@@ -5,6 +5,7 @@ import { getPlayerPropertiesByIds } from '@/shared/api/players'
 import type { PlayerProperty } from '@/shared/types/api'
 import { Spinner } from '@/shared/ui/Spinner'
 import { ErrorMessage } from '@/shared/ui/ErrorMessage'
+import { formatPlayerName } from '@/shared/utils/format'
 import { AURA_IDS, ETERNALS_IDS } from './clans'
 import styles from './ClanComparePage.module.scss'
 
@@ -129,7 +130,7 @@ function PlayersTable({
   eternalsPlayers: PlayerProperty[]
 }) {
   const auraSet = useMemo(() => new Set(AURA_IDS), [])
-  const [sortKey, setSortKey] = useState<SortKey>('hp')
+  const [sortKey, setSortKey] = useState<SortKey>('attackDegree')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [clanFilter, setClanFilter] = useState<'all' | 'Aura' | 'Eternals'>('all')
   const [idFilter, setIdFilter] = useState('')
@@ -321,7 +322,7 @@ function PlayersTable({
 
       {/* Таблица игроков */}
       <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Все игроки (по HP)</h2>
+        <h2 className={styles.sectionTitle}>Все игроки</h2>
       </div>
       <table className={styles.table}>
         <thead>
@@ -367,7 +368,7 @@ function PlayersTable({
               <td>{i + 1}</td>
               <td>
                 <Link to={`/players/${p.playerId}`} className={styles.playerLink}>
-                  {p.playerId}
+                  {formatPlayerName(p.playerId, p.playerName)}
                 </Link>
               </td>
               <td>

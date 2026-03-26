@@ -9,6 +9,7 @@ import {
   getClassName,
   getClassIcon,
   formatScoreDelta,
+  formatPlayerName,
 } from '@/shared/utils/format'
 import { useTeamName } from '@/shared/hooks/useTeamName'
 import styles from './MatchDetailPage.module.scss'
@@ -86,7 +87,7 @@ export function MatchDetailPage() {
                   <td className={styles.idCell}>
                     <Link to={`/players/${p.playerId}`}>
                       <img src={getClassIcon(p.playerCls)} alt={getClassName(p.playerCls)} className={styles.classIcon} />
-                      {p.playerId}
+                      {formatPlayerName(p.playerId, p.playerName)}
                     </Link>
                   </td>
                   <td>{formatScoreDelta(p.scoreBefore, p.scoreAfter)}</td>
@@ -110,7 +111,7 @@ export function MatchDetailPage() {
                   <td className={styles.idCell}>
                     <Link to={`/players/${p.playerId}`}>
                       <img src={getClassIcon(p.playerCls)} alt={getClassName(p.playerCls)} className={styles.classIcon} />
-                      {p.playerId}
+                      {formatPlayerName(p.playerId, p.playerName)}
                     </Link>
                   </td>
                   <td>{formatScoreDelta(p.scoreBefore, p.scoreAfter)}</td>

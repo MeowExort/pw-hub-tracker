@@ -7,6 +7,7 @@ import {
   getMatchPatternName,
   calcWinRate,
   formatTimestamp,
+  formatPlayerName,
 } from '@/shared/utils/format'
 import styles from './MembersSection.module.scss'
 
@@ -65,7 +66,7 @@ function CardsView({ members }: { members: TeamMember[] }) {
               <img src={getClassIcon(m.player.cls)} alt={getClassName(m.player.cls)} className={styles.classIcon} title={getClassName(m.player.cls)} />
             </Link>
             <Link to={`/players/${m.playerId}`} className={styles.cardName}>
-              {m.playerId}
+              {formatPlayerName(m.playerId, m.player.name)}
             </Link>
           </div>
           <div className={styles.cardLastBattle}>
@@ -130,7 +131,7 @@ function TableView({ members }: { members: TeamMember[] }) {
                         <td rowSpan={sorted.length} className={styles.idCell}>
                           <Link to={`/players/${m.playerId}`}>
                             <img src={getClassIcon(m.player.cls)} alt={getClassName(m.player.cls)} className={styles.classIcon} title={getClassName(m.player.cls)} />
-                            {m.playerId}
+                            {formatPlayerName(m.playerId, m.player.name)}
                           </Link>
                         </td>
                       </>
@@ -151,7 +152,7 @@ function TableView({ members }: { members: TeamMember[] }) {
                   <td className={styles.idCell}>
                     <Link to={`/players/${m.playerId}`}>
                       <img src={getClassIcon(m.player.cls)} alt={getClassName(m.player.cls)} className={styles.classIcon} title={getClassName(m.player.cls)} />
-                      {m.playerId}
+                      {formatPlayerName(m.playerId, m.player.name)}
                     </Link>
                   </td>
                   <td>—</td>
