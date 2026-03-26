@@ -280,6 +280,112 @@
 }
 
 
+.distributionHint {
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: var(--space-sm);
+}
+
+.distributionScale {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.distributionEdge {
+  font-weight: 600;
+}
+
+.distributionChart {
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  height: 120px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm);
+}
+
+.distributionSegment {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+
+.segmentBar {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.segmentAura {
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  min-height: 18px;
+  transition: height var(--transition-fast);
+}
+
+.segmentEternals {
+  background: var(--danger);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  min-height: 18px;
+  transition: height var(--transition-fast);
+}
+
+.segmentLabel {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.distributionLegend {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+  font-size: var(--font-size-sm);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legendAura {
+  background: var(--primary);
+}
+
+.legendEternals {
+  background: var(--danger);
+}
+
 .playerLink {
   display: inline-flex;
   align-items: center;

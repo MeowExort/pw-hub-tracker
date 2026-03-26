@@ -188,6 +188,31 @@ function PlayersTable({
   const filteredAura = useMemo(() => allPlayers.filter((p) => p.clan === 'Aura'), [allPlayers])
   const filteredEternals = useMemo(() => allPlayers.filter((p) => p.clan === 'Eternals'), [allPlayers])
 
+  /** Данные для инфографики распределения: разбиваем отсортированный список на сегменты */
+  const distributionData = useMemo(() => {
+    const total = allPlayers.length
+    if (total === 0) return []
+    const segmentCount = Math.min(10, total)
+    const segmentSize = Math.ceil(total / segmentCount)
+    const segments: { label: string; aura: number; eternals: number; total: number }[] = []
+    for (let i = 0; i < segmentCount; i++) {
+      const start = i * segmentSize
+      const end = Math.min(start + segmentSize, total)
+      const slice = allPlayers.slice(start, end)
+      const auraCount = slice.filter((p) => p.clan === 'Aura').length
+      const eternalsCount = slice.filter((p) => p.clan === 'Eternals').length
+      const pctStart = Math.round((start / total) * 100)
+      const pctEnd = Math.round((end / total) * 100)
+      segments.push({
+        label: `${pctStart}–${pctEnd}%`,
+        aura: auraCount,
+        eternals: eternalsCount,
+        total: slice.length,
+      })
+    }
+    return segments
+  }, [allPlayers])
+
   if (auraPlayers.length === 0 && eternalsPlayers.length === 0) {
     return <p className={styles.empty}>Нет данных</p>
   }
@@ -319,6 +344,49 @@ function PlayersTable({
           })}
         </div>
       </div>
+
+      {/* Инфографика распределения */}
+      {distributionData.length > 0 && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>
+            Распределение по силе
+            <span className={styles.distributionHint}>
+              (сортировка: {columns.find((c) => c.key === sortKey)?.label}{sortDir === 'desc' ? ' ↓' : ' ↑'})
+            </span>
+          </h2>
+          <div className={styles.distributionScale}>
+            <span className={styles.distributionEdge}>💪 Сильные</span>
+            <span className={styles.distributionEdge}>Слабые 👎</span>
+          </div>
+          <div className={styles.distributionChart}>
+            {distributionData.map((seg, i) => {
+              const auraPct = seg.total > 0 ? (seg.aura / seg.total) * 100 : 50
+              const eternalsPct = seg.total > 0 ? (seg.eternals / seg.total) * 100 : 50
+              return (
+                <div key={i} className={styles.distributionSegment} title={`${seg.label}: Aura ${seg.aura}, Eternals ${seg.eternals}`}>
+                  <div className={styles.segmentBar}>
+                    {seg.aura > 0 && (
+                      <div className={styles.segmentAura} style={{ height: `${auraPct}%` }}>
+                        {seg.aura}
+                      </div>
+                    )}
+                    {seg.eternals > 0 && (
+                      <div className={styles.segmentEternals} style={{ height: `${eternalsPct}%` }}>
+                        {seg.eternals}
+                      </div>
+                    )}
+                  </div>
+                  <div className={styles.segmentLabel}>{seg.label}</div>
+                </div>
+              )
+            })}
+          </div>
+          <div className={styles.distributionLegend}>
+            <span className={styles.legendItem}><span className={`${styles.legendDot} ${styles.legendAura}`} /> Aura</span>
+            <span className={styles.legendItem}><span className={`${styles.legendDot} ${styles.legendEternals}`} /> Eternals</span>
+          </div>
+        </div>
+      )}
 
       {/* Таблица игроков */}
       <div className={styles.section}>
