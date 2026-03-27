@@ -106,7 +106,7 @@ export function ClanComparePage() {
 
 type TaggedPlayer = PlayerProperty & { clan: 'Aura' | 'Eternals' }
 
-type SortKey = 'playerId' | 'clan' | 'hp' | 'damageTop' | 'attackDegree' | 'defendDegree' | 'vigour' | 'peakGrade'
+type SortKey = 'playerId' | 'clan' | 'hp' | 'damageTop' | 'attackDegree' | 'defendDegree' | 'vigour' | 'peakGrade' | 'critRate'
 type SortDir = 'asc' | 'desc'
 
 /** Получить верхнюю планку урона для сортировки */
@@ -226,6 +226,7 @@ function PlayersTable({
     { key: 'defendDegree', label: STAT_LABELS.defendDegree },
     { key: 'vigour', label: STAT_LABELS.vigour },
     { key: 'peakGrade', label: STAT_LABELS.peakGrade },
+    { key: 'critRate', label: STAT_LABELS.critRate }
   ]
 
   const updateRange = (key: string, field: 'min' | 'max', value: string) => {
@@ -454,6 +455,7 @@ function PlayersTable({
               <td>{p.defendDegree.toLocaleString('ru-RU')}</td>
               <td>{p.vigour.toLocaleString('ru-RU')}</td>
               <td>{p.peakGrade}</td>
+              <td>{p.critRate}</td>
             </tr>
           ))}
         </tbody>
