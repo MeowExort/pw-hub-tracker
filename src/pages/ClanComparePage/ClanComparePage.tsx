@@ -5,7 +5,7 @@ import { getPlayerPropertiesByIds } from '@/shared/api/players'
 import type { PlayerProperty } from '@/shared/types/api'
 import { Spinner } from '@/shared/ui/Spinner'
 import { ErrorMessage } from '@/shared/ui/ErrorMessage'
-import { formatPlayerName } from '@/shared/utils/format'
+import { formatPlayerName, getClassName, getClassIcon } from '@/shared/utils/format'
 import { AURA_IDS, ETERNALS_IDS } from './clans'
 import styles from './ClanComparePage.module.scss'
 
@@ -106,7 +106,7 @@ export function ClanComparePage() {
 
 type TaggedPlayer = PlayerProperty & { clan: 'Aura' | 'Eternals' }
 
-type SortKey = 'playerId' | 'clan' | 'hp' | 'damageTop' | 'attackDegree' | 'defendDegree' | 'vigour' | 'peakGrade' | 'critRate'
+type SortKey = 'playerId' | 'clan' | 'playerCls' | 'hp' | 'damageTop' | 'attackDegree' | 'defendDegree' | 'vigour' | 'peakGrade' | 'critRate'
 type SortDir = 'asc' | 'desc'
 
 /** Получить верхнюю планку урона для сортировки */
@@ -118,6 +118,7 @@ function getDamageTop(p: PlayerProperty): number {
 function getSortValue(p: TaggedPlayer, key: SortKey): number | string {
   if (key === 'damageTop') return getDamageTop(p)
   if (key === 'clan') return p.clan
+  if (key === 'playerCls') return getClassName(p.playerCls ?? -1)
   return Number(p[key as keyof PlayerProperty] ?? 0)
 }
 
@@ -133,6 +134,7 @@ function PlayersTable({
   const [sortKey, setSortKey] = useState<SortKey>('attackDegree')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [clanFilter, setClanFilter] = useState<'all' | 'Aura' | 'Eternals'>('all')
+  const [classFilter, setClassFilter] = useState<string>('all')
   const [idFilter, setIdFilter] = useState('')
   const [rangeFilters, setRangeFilters] = useState<Record<string, { min: string; max: string }>>({})
 
@@ -143,6 +145,11 @@ function PlayersTable({
     ]
 
     let filtered = clanFilter === 'all' ? tagged : tagged.filter((p) => p.clan === clanFilter)
+
+    if (classFilter !== 'all') {
+      const clsNum = Number(classFilter)
+      filtered = filtered.filter((p) => p.playerCls === clsNum)
+    }
 
     if (idFilter) {
       filtered = filtered.filter((p) => String(p.playerId).includes(idFilter))
@@ -169,7 +176,7 @@ function PlayersTable({
         : (va as number) - (vb as number)
       return sortDir === 'asc' ? cmp : -cmp
     })
-  }, [auraPlayers, eternalsPlayers, sortKey, sortDir, clanFilter, idFilter, rangeFilters])
+  }, [auraPlayers, eternalsPlayers, sortKey, sortDir, clanFilter, classFilter, idFilter, rangeFilters])
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -219,6 +226,7 @@ function PlayersTable({
 
   const columns: { key: SortKey; label: string }[] = [
     { key: 'playerId', label: 'ID' },
+    { key: 'playerCls', label: 'Класс' },
     { key: 'clan', label: 'Клан' },
     { key: 'hp', label: STAT_LABELS.hp },
     { key: 'damageTop', label: 'Верхняя планка' },
@@ -252,6 +260,7 @@ function PlayersTable({
   const hasFilter = (key: SortKey): boolean => {
     if (key === 'playerId') return idFilter !== ''
     if (key === 'clan') return clanFilter !== 'all'
+    if (key === 'playerCls') return classFilter !== 'all'
     const r = rangeFilters[key]
     return !!(r && (r.min !== '' || r.max !== ''))
   }
@@ -259,6 +268,7 @@ function PlayersTable({
   const getFilterText = (key: SortKey): string | null => {
     if (key === 'playerId' && idFilter) return `«${idFilter}»`
     if (key === 'clan' && clanFilter !== 'all') return clanFilter
+    if (key === 'playerCls' && classFilter !== 'all') return getClassName(Number(classFilter))
     const r = rangeFilters[key]
     if (!r) return null
     if (r.min !== '' && r.max !== '') return `${r.min}–${r.max}`
@@ -291,6 +301,21 @@ function PlayersTable({
           <option value="all">Все</option>
           <option value="Aura">Aura</option>
           <option value="Eternals">Eternals</option>
+        </select>
+      )
+    }
+    if (col.key === 'playerCls') {
+      return (
+        <select
+          className={styles.filterSelect}
+          value={classFilter}
+          onChange={(e) => setClassFilter(e.target.value)}
+          autoFocus
+        >
+          <option value="all">Все</option>
+          {Array.from({ length: 17 }, (_, i) => (
+            <option key={i} value={String(i)}>{getClassName(i)}</option>
+          ))}
         </select>
       )
     }
@@ -437,8 +462,14 @@ function PlayersTable({
               <td>{i + 1}</td>
               <td>
                 <Link to={`/players/${p.playerId}`} className={styles.playerLink}>
+                  {p.playerCls != null && (
+                    <img src={getClassIcon(p.playerCls)} alt={getClassName(p.playerCls)} className={styles.classIcon} />
+                  )}
                   {formatPlayerName(p.playerId, p.playerName)}
                 </Link>
+              </td>
+              <td>
+                {p.playerCls != null ? getClassName(p.playerCls) : '—'}
               </td>
               <td>
                 <span className={auraSet.has(p.playerId) ? styles.aura : styles.eternals}>
