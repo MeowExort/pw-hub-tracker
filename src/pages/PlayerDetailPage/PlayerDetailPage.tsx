@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { getPlayerById, getPlayerMatches, getPlayerScoreHistory } from '@/shared/api/players'
+import { getPlayerById, getPlayerMatches, getPlayerScoreHistory, getPlayerPropertiesByIds } from '@/shared/api/players'
 import { Spinner } from '@/shared/ui/Spinner'
 import { ErrorMessage } from '@/shared/ui/ErrorMessage'
 import { Pagination } from '@/shared/ui/Pagination'
@@ -45,6 +45,14 @@ export function PlayerDetailPage() {
     enabled: !!server && !!id,
   })
 
+  const propsQuery = useQuery({
+    queryKey: ['playerProperties', server, id],
+    queryFn: () => getPlayerPropertiesByIds([{ Id: id, Server: server! }]),
+    enabled: !!server && !!id,
+  })
+
+  const props = propsQuery.data?.[0]
+
   const matchTeamIds = matchesQuery.data?.items.flatMap((m) => [m.match.teamAId, m.match.teamBId]) ?? []
   const matchTeamNames = useTeamNames(matchTeamIds)
   const playerTeamName = useTeamName(playerQuery.data?.teamId)
@@ -82,32 +90,70 @@ export function PlayerDetailPage() {
         </div>
       </div>
 
-      {/* Боевая статистика */}
-      {player.battleStats.length > 0 && (
-        <div className={styles.statsGrid}>
-          {player.battleStats.map((stat) => (
-            <div key={stat.matchPattern} className={styles.statCard}>
-              <div className={styles.statHeader}>{getMatchPatternName(stat.matchPattern)}</div>
-              <div className={styles.statRow}>
-                <span className={styles.statLabel}>Рейтинг</span>
-                <span className={styles.statValue}>{stat.score}</span>
+      {/* Боевая статистика + Характеристики */}
+      <div className={styles.ratingAndProps}>
+        {player.battleStats.length > 0 && (
+          <div className={styles.ratingCol}>
+            <h2 className={styles.sectionTitle}>Текущий рейтинг</h2>
+            <div className={styles.statsGrid}>
+              {player.battleStats.map((stat) => (
+                <div key={stat.matchPattern} className={styles.statCard}>
+                  <div className={styles.statHeader}>{getMatchPatternName(stat.matchPattern)}</div>
+                  <div className={styles.statRow}>
+                    <span className={styles.statLabel}>Рейтинг</span>
+                    <span className={styles.statValue}>{stat.score}</span>
+                  </div>
+                  <div className={styles.statRow}>
+                    <span className={styles.statLabel}>Ранг</span>
+                    <span className={styles.statValue}>#{stat.rank}</span>
+                  </div>
+                  <div className={styles.statRow}>
+                    <span className={styles.statLabel}>Винрейт</span>
+                    <span className={styles.statValue}>{calcWinRate(stat.winCount, stat.battleCount)}</span>
+                  </div>
+                  <div className={styles.statRow}>
+                    <span className={styles.statLabel}>Бои</span>
+                    <span className={styles.statValue}>{stat.battleCount}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className={styles.propsCol}>
+          <h2 className={styles.sectionTitle}>Характеристики</h2>
+          {propsQuery.isLoading && <div className={styles.center}><Spinner size="sm" /></div>}
+          {props && (
+            <div className={styles.propsTooltip}>
+            <div className={styles.propsTooltipHeader}>
+              <span className={styles.propsTooltipIcon}>❤️</span>
+              <span className={styles.propsHp}>{props.hp.toLocaleString()}</span>
+              <span className={styles.propsTooltipIcon}>💧</span>
+              <span className={styles.propsMp}>{props.mp.toLocaleString()}</span>
+            </div>
+            <div className={styles.propsTooltipBody}>
+              <div className={styles.propsInnerCol}>
+                <div className={styles.propRow}><span className={styles.propLabel}>ПА</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.attackDegree}</span></div>
+                <div className={styles.propRow}><span className={styles.propLabel}>ПЗ</span><span className={`${styles.propValue} ${styles.defColor}`}>{props.defendDegree}</span></div>
+                <div className={styles.propRow}><span className={styles.propLabel}>БУ</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.peakGrade}</span></div>
+                <div className={styles.propRow}><span className={styles.propLabel}>БД</span><span className={styles.propValue}>{props.vigour}</span></div>
+                <div className={styles.propRow}><span className={styles.propLabel}>Физ. атака</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.damageLow} – {props.damageHigh}</span></div>
+                <div className={styles.propRow}><span className={styles.propLabel}>Маг. атака</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.damageMagicLow} – {props.damageMagicHigh}</span></div>
               </div>
-              <div className={styles.statRow}>
-                <span className={styles.statLabel}>Ранг</span>
-                <span className={styles.statValue}>#{stat.rank}</span>
-              </div>
-              <div className={styles.statRow}>
-                <span className={styles.statLabel}>Винрейт</span>
-                <span className={styles.statValue}>{calcWinRate(stat.winCount, stat.battleCount)}</span>
-              </div>
-              <div className={styles.statRow}>
-                <span className={styles.statLabel}>Бои</span>
-                <span className={styles.statValue}>{stat.battleCount}</span>
+              <div className={styles.propsInnerCol}>
+                <div className={styles.propRow}><span className={styles.propLabel}>Крит. урон</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.critDamageBonus.toLocaleString()}</span></div>
+                <div className={styles.propRow}><span className={styles.propLabel}>Крит. шанс</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.critRate.toLocaleString()}</span></div>
+                <div className={styles.propRow}><span className={styles.propLabel}>Физ. защита</span><span className={`${styles.propValue} ${styles.defColor}`}>{props.defense.toLocaleString()}</span></div>
+                <div className={styles.propRow}><span className={styles.propLabel}>Маг. защита</span><span className={`${styles.propValue} ${styles.defColor}`}>{props.resistance[0].toLocaleString()}</span></div>
+                <div className={styles.propRow}><span className={styles.propLabel}>Пробив. физ.</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.antiDefenseDegree}</span></div>
+                <div className={styles.propRow}><span className={styles.propLabel}>Пробив. маг.</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.antiResistanceDegree}</span></div>
               </div>
             </div>
-          ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* График рейтинга */}
       <div className={styles.section}>
