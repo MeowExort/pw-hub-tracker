@@ -8,6 +8,7 @@ import { MatchesPage } from '@/pages/MatchesPage'
 import { MatchDetailPage } from '@/pages/MatchDetailPage'
 import { ClanComparePage } from '@/pages/ClanComparePage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import {CentaurClanComparePage} from "@/pages/CentaurClanComparePage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,6 +33,7 @@ export function App() {
             <Route path="/matches" element={<MatchesPage />} />
             <Route path="/matches/:matchId" element={<MatchDetailPage />} />
             <Route path="/clan-compare" element={<ClanComparePage />} />
+            <Route path="/centaur-clan-compare" element={<CentaurClanComparePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>

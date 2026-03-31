@@ -24,10 +24,16 @@ export function MainLayout() {
               Матчи
             </NavLink>
             <NavLink
-              to="/clan-compare"
-              className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ''}`}
+                to="/clan-compare"
+                className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ''}`}
             >
-              Кланы
+              Aura vs Eternals
+            </NavLink>
+            <NavLink
+                to="/centaur-clan-compare"
+                className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ''}`}
+            >
+              Ermitage vs exchange
             </NavLink>
           </nav>
         </div>
