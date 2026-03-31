@@ -62,10 +62,10 @@ function CardsView({ members }: { members: TeamMember[] }) {
       {members.map((m) => (
         <div key={m.playerId} className={styles.card}>
           <div className={styles.cardHeader}>
-            <Link to={`/players/${m.playerId}`}>
+            <Link to={`/players/${m.player.server ?? 'unknown'}/${m.playerId}`}>
               <img src={getClassIcon(m.player.cls)} alt={getClassName(m.player.cls)} className={styles.classIcon} title={getClassName(m.player.cls)} />
             </Link>
-            <Link to={`/players/${m.playerId}`} className={styles.cardName}>
+            <Link to={`/players/${m.player.server ?? 'unknown'}/${m.playerId}`} className={styles.cardName}>
               {formatPlayerName(m.playerId, m.player.name)}
             </Link>
           </div>
@@ -129,7 +129,7 @@ function TableView({ members }: { members: TeamMember[] }) {
                     {i === 0 && (
                       <>
                         <td rowSpan={sorted.length} className={styles.idCell}>
-                          <Link to={`/players/${m.playerId}`}>
+                          <Link to={`/players/${m.player.server ?? 'unknown'}/${m.playerId}`}>
                             <img src={getClassIcon(m.player.cls)} alt={getClassName(m.player.cls)} className={styles.classIcon} title={getClassName(m.player.cls)} />
                             {formatPlayerName(m.playerId, m.player.name)}
                           </Link>
@@ -150,7 +150,7 @@ function TableView({ members }: { members: TeamMember[] }) {
               ) : (
                 <tr>
                   <td className={styles.idCell}>
-                    <Link to={`/players/${m.playerId}`}>
+                    <Link to={`/players/${m.player.server ?? 'unknown'}/${m.playerId}`}>
                       <img src={getClassIcon(m.player.cls)} alt={getClassName(m.player.cls)} className={styles.classIcon} title={getClassName(m.player.cls)} />
                       {formatPlayerName(m.playerId, m.player.name)}
                     </Link>

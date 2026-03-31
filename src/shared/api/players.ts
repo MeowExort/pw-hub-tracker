@@ -8,8 +8,8 @@ import type {
 } from '@/shared/types/api'
 
 /** Получить детали игрока */
-export function getPlayerById(playerId: number) {
-  return apiGet<PlayerDetail>(`/api/arena/players/${playerId}`)
+export function getPlayerById(server: string, playerId: number) {
+  return apiGet<PlayerDetail>(`/api/arena/players/${server}/${playerId}`)
 }
 
 /** Параметры запроса матчей игрока */
@@ -20,9 +20,9 @@ export interface GetPlayerMatchesParams {
 }
 
 /** Получить матчи игрока */
-export function getPlayerMatches(playerId: number, params?: GetPlayerMatchesParams) {
+export function getPlayerMatches(server: string, playerId: number, params?: GetPlayerMatchesParams) {
   return apiGet<PaginatedResponse<PlayerMatchItem>>(
-    `/api/arena/players/${playerId}/matches`,
+    `/api/arena/players/${server}/${playerId}/matches`,
     params as Record<string, number | undefined>,
   )
 }
@@ -34,14 +34,14 @@ export interface GetPlayerScoreHistoryParams {
 }
 
 /** Получить историю рейтинга игрока */
-export function getPlayerScoreHistory(playerId: number, params?: GetPlayerScoreHistoryParams) {
+export function getPlayerScoreHistory(server: string, playerId: number, params?: GetPlayerScoreHistoryParams) {
   return apiGet<ScoreHistoryItem[]>(
-    `/api/arena/players/${playerId}/score-history`,
+    `/api/arena/players/${server}/${playerId}/score-history`,
     params as Record<string, number | undefined>,
   )
 }
 
 /** Получить характеристики игроков по массиву ID */
-export function getPlayerPropertiesByIds(playerIds: number[]) {
-  return apiPost<PlayerProperty[]>('/api/players/properties/by-ids', playerIds)
+export function getPlayerPropertiesByIds(players: { Id: number; Server: string }[]) {
+  return apiPost<PlayerProperty[]>('/api/players/properties/by-ids', players)
 }

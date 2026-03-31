@@ -28,7 +28,7 @@ export function App() {
             <Route index element={<Navigate to="/teams" replace />} />
             <Route path="/teams" element={<TeamsPage />} />
             <Route path="/teams/:teamId" element={<TeamDetailPage />} />
-            <Route path="/players/:playerId" element={<PlayerDetailPage />} />
+            <Route path="/players/:server/:playerId" element={<PlayerDetailPage />} />
             <Route path="/matches" element={<MatchesPage />} />
             <Route path="/matches/:matchId" element={<MatchDetailPage />} />
             <Route path="/clan-compare" element={<ClanComparePage />} />

@@ -22,27 +22,27 @@ const PAGE_SIZE = 20
 
 /** Страница деталей игрока */
 export function PlayerDetailPage() {
-  const { playerId } = useParams<{ playerId: string }>()
+  const { server, playerId } = useParams<{ server: string; playerId: string }>()
   const id = Number(playerId)
   const [matchPage, setMatchPage] = useState(1)
   const [matchPattern, setMatchPattern] = useState<number | undefined>()
 
   const playerQuery = useQuery({
-    queryKey: ['player', id],
-    queryFn: () => getPlayerById(id),
-    enabled: !!id,
+    queryKey: ['player', server, id],
+    queryFn: () => getPlayerById(server!, id),
+    enabled: !!server && !!id,
   })
 
   const matchesQuery = useQuery({
-    queryKey: ['playerMatches', id, { page: matchPage, matchPattern }],
-    queryFn: () => getPlayerMatches(id, { page: matchPage, pageSize: PAGE_SIZE, matchPattern }),
-    enabled: !!id,
+    queryKey: ['playerMatches', server, id, { page: matchPage, matchPattern }],
+    queryFn: () => getPlayerMatches(server!, id, { page: matchPage, pageSize: PAGE_SIZE, matchPattern }),
+    enabled: !!server && !!id,
   })
 
   const historyQuery = useQuery({
-    queryKey: ['playerScoreHistory', id, { matchPattern }],
-    queryFn: () => getPlayerScoreHistory(id, { matchPattern, limit: 200 }),
-    enabled: !!id,
+    queryKey: ['playerScoreHistory', server, id, { matchPattern }],
+    queryFn: () => getPlayerScoreHistory(server!, id, { matchPattern, limit: 200 }),
+    enabled: !!server && !!id,
   })
 
   const matchTeamIds = matchesQuery.data?.items.flatMap((m) => [m.match.teamAId, m.match.teamBId]) ?? []

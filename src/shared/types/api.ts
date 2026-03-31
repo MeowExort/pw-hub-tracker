@@ -52,6 +52,7 @@ export interface TeamDetailMember {
   rewardMoneyInfo: number
   playerCls?: number | null
   playerName?: string | null
+  playerServer?: string | null
 }
 
 /** Участник команды (расширенный) */
@@ -62,6 +63,7 @@ export interface TeamMember {
     id: number
     name?: string | null
     cls: number
+    server?: string | null
     lastBattleTimestamp: number
     lastVisiteTimestamp: number
     battleStats: BattleStat[]
@@ -89,6 +91,7 @@ export interface MatchParticipant {
   teamId: number
   playerCls: number
   playerName?: string | null
+  playerServer?: string | null
   scoreBefore: number | null
   scoreAfter: number | null
   isWinner: boolean
@@ -104,6 +107,7 @@ export interface PlayerDetail {
   id: number
   teamId: number
   cls: number
+  server?: string | null
   name?: string | null
   rewardMoney: number
   weekResetTimestamp: number

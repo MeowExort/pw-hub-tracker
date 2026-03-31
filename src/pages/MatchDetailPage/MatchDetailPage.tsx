@@ -85,7 +85,7 @@ export function MatchDetailPage() {
               {teamAParticipants.map((p) => (
                 <tr key={p.playerId} className={p.isWinner ? styles.winRow : styles.lossRow}>
                   <td className={styles.idCell}>
-                    <Link to={`/players/${p.playerId}`}>
+                    <Link to={`/players/${p.playerServer ?? 'unknown'}/${p.playerId}`}>
                       <img src={getClassIcon(p.playerCls)} alt={getClassName(p.playerCls)} className={styles.classIcon} />
                       {formatPlayerName(p.playerId, p.playerName)}
                     </Link>
@@ -109,7 +109,7 @@ export function MatchDetailPage() {
               {teamBParticipants.map((p) => (
                 <tr key={p.playerId} className={p.isWinner ? styles.winRow : styles.lossRow}>
                   <td className={styles.idCell}>
-                    <Link to={`/players/${p.playerId}`}>
+                    <Link to={`/players/${p.playerServer ?? 'unknown'}/${p.playerId}`}>
                       <img src={getClassIcon(p.playerCls)} alt={getClassName(p.playerCls)} className={styles.classIcon} />
                       {formatPlayerName(p.playerId, p.playerName)}
                     </Link>

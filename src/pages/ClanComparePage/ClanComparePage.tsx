@@ -52,11 +52,14 @@ function fmt(value: number): string {
 
 /** Страница сравнения кланов Aura и Eternals */
 export function ClanComparePage() {
-  const allIds = useMemo(() => [...AURA_IDS, ...ETERNALS_IDS], [])
+  const allPlayers = useMemo(
+    () => [...AURA_IDS, ...ETERNALS_IDS].map((id) => ({ Id: id, Server: 'alkor' })),
+    [],
+  )
 
   const query = useQuery({
     queryKey: ['clanCompare', 'properties'],
-    queryFn: () => getPlayerPropertiesByIds(allIds),
+    queryFn: () => getPlayerPropertiesByIds(allPlayers),
   })
 
   const { auraPlayers, eternalsPlayers } = useMemo(() => {
@@ -461,7 +464,7 @@ function PlayersTable({
             <tr key={p.playerId}>
               <td>{i + 1}</td>
               <td>
-                <Link to={`/players/${p.playerId}`} className={styles.playerLink}>
+                <Link to={`/players/${p.server}/${p.playerId}`} className={styles.playerLink}>
                   {p.playerCls != null && (
                     <img src={getClassIcon(p.playerCls)} alt={getClassName(p.playerCls)} className={styles.classIcon} />
                   )}
