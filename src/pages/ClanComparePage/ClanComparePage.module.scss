@@ -155,11 +155,11 @@
   }
 }
 
-.ermitage {
+.aura {
   color: var(--primary);
 }
 
-.exchange {
+.eternals {
   color: var(--danger);
 }
 
@@ -328,7 +328,7 @@
   overflow: hidden;
 }
 
-.segmentErmitage {
+.segmentAura {
   background: var(--primary);
   display: flex;
   align-items: center;
@@ -340,7 +340,7 @@
   transition: height var(--transition-fast);
 }
 
-.segmentExchange {
+.segmentEternals {
   background: var(--danger);
   display: flex;
   align-items: center;
@@ -378,11 +378,11 @@
   display: inline-block;
 }
 
-.legendErmitage {
+.legendAura {
   background: var(--primary);
 }
 
-.legendExchange {
+.legendEternals {
   background: var(--danger);
 }
 
