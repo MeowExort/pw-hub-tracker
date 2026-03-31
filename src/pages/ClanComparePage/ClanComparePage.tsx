@@ -58,7 +58,7 @@ export function ClanComparePage() {
   )
 
   const query = useQuery({
-    queryKey: ['clanCompare', 'properties'],
+    queryKey: ['clanCompare', 'alkor', 'properties'],
     queryFn: () => getPlayerPropertiesByIds(allPlayers),
   })
 

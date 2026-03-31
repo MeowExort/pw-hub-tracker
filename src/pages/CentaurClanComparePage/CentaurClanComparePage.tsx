@@ -58,7 +58,7 @@ export function CentaurClanComparePage() {
   )
 
   const query = useQuery({
-    queryKey: ['clanCompare', 'properties'],
+    queryKey: ['clanCompare', 'centaur', 'properties'],
     queryFn: () => getPlayerPropertiesByIds(allPlayers),
   })
 
