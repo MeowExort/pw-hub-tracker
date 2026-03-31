@@ -9,6 +9,10 @@ import { MatchDetailPage } from '@/pages/MatchDetailPage'
 import { ClanComparePage } from '@/pages/ClanComparePage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import {CentaurClanComparePage} from "@/pages/CentaurClanComparePage";
+import { AnalyticsClassesPage } from '@/pages/AnalyticsClassesPage'
+import { AnalyticsPlayersPage } from '@/pages/AnalyticsPlayersPage'
+import { AnalyticsTimePage } from '@/pages/AnalyticsTimePage'
+import { AnalyticsServersPage } from '@/pages/AnalyticsServersPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,6 +38,10 @@ export function App() {
             <Route path="/matches/:matchId" element={<MatchDetailPage />} />
             <Route path="/clan-compare" element={<ClanComparePage />} />
             <Route path="/centaur-clan-compare" element={<CentaurClanComparePage />} />
+            <Route path="/analytics/classes" element={<AnalyticsClassesPage />} />
+            <Route path="/analytics/players" element={<AnalyticsPlayersPage />} />
+            <Route path="/analytics/time" element={<AnalyticsTimePage />} />
+            <Route path="/analytics/servers" element={<AnalyticsServersPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
