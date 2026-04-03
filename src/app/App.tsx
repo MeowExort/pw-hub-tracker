@@ -13,6 +13,7 @@ import { AnalyticsClassesPage } from '@/pages/AnalyticsClassesPage'
 import { AnalyticsPlayersPage } from '@/pages/AnalyticsPlayersPage'
 import { AnalyticsTimePage } from '@/pages/AnalyticsTimePage'
 import { AnalyticsServersPage } from '@/pages/AnalyticsServersPage'
+import {MizarClanComparePage} from "@/pages/MizarClanComparePage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +39,7 @@ export function App() {
             <Route path="/matches/:matchId" element={<MatchDetailPage />} />
             <Route path="/clan-compare" element={<ClanComparePage />} />
             <Route path="/centaur-clan-compare" element={<CentaurClanComparePage />} />
+            <Route path="/mizar-clan-compare" element={<MizarClanComparePage />} />
             <Route path="/analytics/classes" element={<AnalyticsClassesPage />} />
             <Route path="/analytics/players" element={<AnalyticsPlayersPage />} />
             <Route path="/analytics/time" element={<AnalyticsTimePage />} />
