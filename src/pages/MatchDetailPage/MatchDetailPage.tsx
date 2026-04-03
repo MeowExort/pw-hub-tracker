@@ -11,7 +11,6 @@ import {
   formatScoreDelta,
   formatPlayerName,
 } from '@/shared/utils/format'
-import { useTeamName } from '@/shared/hooks/useTeamName'
 import styles from './MatchDetailPage.module.scss'
 
 /** Страница деталей матча */
@@ -25,15 +24,12 @@ export function MatchDetailPage() {
     enabled: !!id,
   })
 
-  const teamAName = useTeamName(data?.teamAId)
-  const teamBName = useTeamName(data?.teamBId)
-
   if (isLoading) return <div className={styles.center}><Spinner /></div>
   if (error) return <ErrorMessage message="Не удалось загрузить матч" onRetry={() => refetch()} />
   if (!data) return null
 
-  const teamALabel = teamAName ?? `Команда ${data.teamAId}`
-  const teamBLabel = teamBName ?? `Команда ${data.teamBId}`
+  const teamALabel = data.teamAName ?? `Команда ${data.teamAId}`
+  const teamBLabel = data.teamBName ?? `Команда ${data.teamBId}`
 
   const teamAParticipants = data.participants.filter((p) => p.teamId === data.teamAId)
   const teamBParticipants = data.participants.filter((p) => p.teamId === data.teamBId)

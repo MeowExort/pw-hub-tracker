@@ -1,0 +1,335 @@
+.wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+
+  img {
+    display: block;
+  }
+}
+
+.tooltip {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  z-index: 1000;
+  background: var(--card, #1e1e2e);
+  border: 1px solid var(--border, #333);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  padding: var(--space-md, 12px);
+  min-width: 280px;
+  max-width: 360px;
+  pointer-events: auto;
+  animation: tooltipFadeIn 0.15s ease-out;
+  text-decoration: none;
+  color: inherit;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.loading {
+  text-align: center;
+  color: var(--text-secondary, #888);
+  padding: var(--space-md, 12px);
+  font-size: var(--font-size-sm, 0.85rem);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm, 8px);
+  margin-bottom: var(--space-sm, 8px);
+}
+
+.teamIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm, 4px);
+  background: var(--bg, #111);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.teamName {
+  font-weight: 700;
+  font-size: var(--font-size-md, 0.95rem);
+  color: var(--primary, #5b9bd5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.teamMeta {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--text-secondary, #888);
+}
+
+.ratings {
+  display: flex;
+  gap: var(--space-sm, 8px);
+}
+
+.statBlock {
+  flex: 1;
+  background: var(--bg, #111);
+  border-radius: var(--radius-sm, 4px);
+  padding: var(--space-sm, 8px);
+}
+
+.statHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--text-secondary, #888);
+  margin-bottom: 4px;
+}
+
+.statRank {
+  font-weight: 600;
+  color: var(--primary, #5b9bd5);
+}
+
+.statScore {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text, #eee);
+  margin-bottom: 4px;
+}
+
+.statWr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.wrTrack {
+  flex: 1;
+  height: 6px;
+  background: var(--border, #333);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.wrFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.wrLabel {
+  font-size: var(--font-size-xs, 0.75rem);
+  font-weight: 600;
+  min-width: 32px;
+  text-align: right;
+}
+
+.statMeta {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--text-secondary, #888);
+}
+
+.statWeek {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--text-secondary, #888);
+  margin-top: 2px;
+}
+
+.noStats {
+  text-align: center;
+  color: var(--text-secondary, #888);
+  font-size: var(--font-size-sm, 0.85rem);
+  padding: var(--space-sm, 8px);
+}
+
+// ===== H2H Section =====
+
+.h2hSection {
+  margin-top: var(--space-sm, 8px);
+  padding-top: var(--space-sm, 8px);
+  border-top: 1px solid var(--border, #333);
+}
+
+.h2hTitle {
+  font-size: var(--font-size-sm, 0.85rem);
+  font-weight: 700;
+  color: var(--text, #eee);
+  margin-bottom: var(--space-sm, 8px);
+}
+
+.h2hLoading,
+.h2hEmpty {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--text-secondary, #888);
+  text-align: center;
+  padding: var(--space-xs, 4px) 0;
+}
+
+.h2hOverall {
+  text-align: center;
+  margin-bottom: var(--space-sm, 8px);
+}
+
+.h2hScoreLine {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm, 8px);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.h2hWins {
+  color: var(--success, #27ae60);
+}
+
+.h2hSeparator {
+  color: var(--text-secondary, #888);
+}
+
+.h2hLosses {
+  color: var(--danger, #e74c3c);
+}
+
+.h2hOverallWr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.h2hOverallMeta {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--text-secondary, #888);
+}
+
+.h2hPatterns {
+  display: flex;
+  gap: var(--space-xs, 4px);
+  margin-bottom: var(--space-sm, 8px);
+}
+
+.h2hPatternBlock {
+  flex: 1;
+  background: var(--bg, #111);
+  border-radius: var(--radius-sm, 4px);
+  padding: 6px;
+}
+
+.h2hPatternHeader {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--text-secondary, #888);
+  margin-bottom: 2px;
+}
+
+.h2hPatternStats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.h2hScore {
+  font-size: var(--font-size-sm, 0.85rem);
+  font-weight: 600;
+  color: var(--text, #eee);
+}
+
+.h2hWrBadge {
+  font-size: var(--font-size-sm, 0.85rem);
+  font-weight: 700;
+}
+
+.h2hPatternMeta {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--text-secondary, #888);
+  margin-top: 2px;
+}
+
+.h2hRecent {
+  margin-top: var(--space-xs, 4px);
+}
+
+.h2hRecentTitle {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--text-secondary, #888);
+  margin-bottom: 4px;
+}
+
+.h2hMatchRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm, 8px);
+  padding: 2px 4px;
+  border-radius: var(--radius-sm, 4px);
+  font-size: var(--font-size-xs, 0.75rem);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+
+  &:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+.h2hWin {
+  .h2hMatchResult {
+    color: var(--success, #27ae60);
+    font-weight: 700;
+  }
+}
+
+.h2hLoss {
+  .h2hMatchResult {
+    color: var(--danger, #e74c3c);
+    font-weight: 700;
+  }
+}
+
+.h2hMatchResult {
+  width: 14px;
+  text-align: center;
+}
+
+.h2hMatchType {
+  width: 18px;
+  text-align: center;
+}
+
+.h2hMatchDelta {
+  font-weight: 600;
+  min-width: 36px;
+  text-align: right;
+}
+
+.h2hMatchDate {
+  color: var(--text-secondary, #888);
+  margin-left: auto;
+}

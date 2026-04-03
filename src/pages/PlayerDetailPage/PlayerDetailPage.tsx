@@ -1,26 +1,27 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { getPlayerById, getPlayerMatches, getPlayerScoreHistory, getPlayerPropertiesByIds } from '@/shared/api/players'
+import { getPlayerById, getPlayerMatches } from '@/shared/api/players'
 import { Spinner } from '@/shared/ui/Spinner'
 import { ErrorMessage } from '@/shared/ui/ErrorMessage'
 import { Pagination } from '@/shared/ui/Pagination'
+import { MatchTooltip } from '@/shared/ui/MatchTooltip'
+import { TeamTooltip } from '@/shared/ui/TeamTooltip'
 import {
   formatDateTime,
   formatTimestamp,
   getClassName,
+  getClassIcon,
   getMatchPatternName,
-  calcWinRate,
   formatScoreDelta,
   formatPlayerName,
 } from '@/shared/utils/format'
 import { ScoreChart } from '../TeamDetailPage/ScoreChart'
-import { useTeamName, useTeamNames } from '@/shared/hooks/useTeamName'
 import styles from './PlayerDetailPage.module.scss'
 
 const PAGE_SIZE = 20
 
-/** Страница деталей игрока */
+/** Страница деталей игрока — Sidebar + Content */
 export function PlayerDetailPage() {
   const { server, playerId } = useParams<{ server: string; playerId: string }>()
   const id = Number(playerId)
@@ -29,7 +30,7 @@ export function PlayerDetailPage() {
 
   const playerQuery = useQuery({
     queryKey: ['player', server, id],
-    queryFn: () => getPlayerById(server!, id),
+    queryFn: () => getPlayerById(server!, id, 'properties,scorehistory,team'),
     enabled: !!server && !!id,
   })
 
@@ -38,24 +39,6 @@ export function PlayerDetailPage() {
     queryFn: () => getPlayerMatches(server!, id, { page: matchPage, pageSize: PAGE_SIZE, matchPattern }),
     enabled: !!server && !!id,
   })
-
-  const historyQuery = useQuery({
-    queryKey: ['playerScoreHistory', server, id, { matchPattern }],
-    queryFn: () => getPlayerScoreHistory(server!, id, { matchPattern, limit: 200 }),
-    enabled: !!server && !!id,
-  })
-
-  const propsQuery = useQuery({
-    queryKey: ['playerProperties', server, id],
-    queryFn: () => getPlayerPropertiesByIds([{ Id: id, Server: server! }]),
-    enabled: !!server && !!id,
-  })
-
-  const props = propsQuery.data?.[0]
-
-  const matchTeamIds = matchesQuery.data?.items.flatMap((m) => [m.match.teamAId, m.match.teamBId]) ?? []
-  const matchTeamNames = useTeamNames(matchTeamIds)
-  const playerTeamName = useTeamName(playerQuery.data?.teamId)
 
   if (playerQuery.isLoading) {
     return <div className={styles.center}><Spinner /></div>
@@ -68,159 +51,205 @@ export function PlayerDetailPage() {
   const player = playerQuery.data
   if (!player) return null
 
+  const props = player.properties
+  const scoreHistory = player.scoreHistory
+  const playerTeamName = player.team?.name ?? player.teamName
+
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>{formatPlayerName(player.id, player.name)}</h1>
-        <span className={styles.badge}>{getClassName(player.cls)}</span>
-      </div>
+    <div className={styles.layout}>
+      {/* ===== SIDEBAR ===== */}
+      <aside className={styles.sidebar}>
+        <div className={styles.sidebarHeader}>
+          <div className={styles.sidePlayerIcon}>
+            <img src={getClassIcon(player.cls)} alt={getClassName(player.cls)} width={40} height={40} />
+          </div>
+          <h1 className={styles.playerName}>{formatPlayerName(player.id, player.name)}</h1>
+          <span className={styles.badge}>{getClassName(player.cls)}</span>
+        </div>
 
-      <div className={styles.info}>
-        <div className={styles.infoItem}>
-          <span className={styles.infoLabel}>Команда</span>
-          <Link to={`/teams/${player.teamId}`}>{playerTeamName ?? player.teamId}</Link>
+        {/* Инфо */}
+        <div className={styles.sideInfo}>
+          <div className={styles.sideInfoRow}>
+            <span className={styles.sideInfoLabel}>Команда</span>
+            <Link to={`/teams/${player.teamId}`}>{playerTeamName ?? player.teamId}</Link>
+          </div>
+          <div className={styles.sideInfoRow}>
+            <span className={styles.sideInfoLabel}>Последний бой</span>
+            <span>{formatTimestamp(player.lastBattleTimestamp)}</span>
+          </div>
+          <div className={styles.sideInfoRow}>
+            <span className={styles.sideInfoLabel}>Обновлено</span>
+            <span>{formatDateTime(player.updatedAt)}</span>
+          </div>
         </div>
-        <div className={styles.infoItem}>
-          <span className={styles.infoLabel}>Последний бой</span>
-          <span>{formatTimestamp(player.lastBattleTimestamp)}</span>
-        </div>
-        <div className={styles.infoItem}>
-          <span className={styles.infoLabel}>Обновлено</span>
-          <span>{formatDateTime(player.updatedAt)}</span>
-        </div>
-      </div>
 
-      {/* Боевая статистика + Характеристики */}
-      <div className={styles.ratingAndProps}>
+        {/* Характеристики */}
+        {props && (
+          <div className={styles.sideProps}>
+            <div className={styles.sideSectionLabel}>Характеристики</div>
+            <div className={styles.sidePropsVitals}>
+              <span className={styles.propsHp}>❤️ {props.hp.toLocaleString()}</span>
+              <span className={styles.propsMp}>💧 {props.mp.toLocaleString()}</span>
+            </div>
+            <div className={styles.sidePropsList}>
+
+              <div className={styles.propRow}><span className={styles.propLabel}>ПА</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.attackDegree}</span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>ПЗ</span><span className={`${styles.propValue} ${styles.defColor}`}>{props.defendDegree}</span></div>
+              <hr className={styles.propsDivider} />
+              <div className={styles.propRow}><span className={styles.propLabel}>Физ. атака</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.damageLow}–{props.damageHigh}</span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>Маг. атака</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.damageMagicLow}–{props.damageMagicHigh}</span></div>
+              <hr className={styles.propsDivider} />
+              <div className={styles.propRow}><span className={styles.propLabel}>БУ</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.peakGrade}</span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>БД</span><span className={styles.propValue}>{props.vigour}</span></div>
+              <hr className={styles.propsDivider} />
+              <div className={styles.propRow}><span className={styles.propLabel}>Физ. защита</span><span className={`${styles.propValue} ${styles.defColor}`}>{props.defense.toLocaleString()}</span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>Маг. защита</span><span className={`${styles.propValue} ${styles.defColor}`}>{props.resistance[0].toLocaleString()}</span></div>
+              <hr className={styles.propsDivider} />
+              <div className={styles.propRow}><span className={styles.propLabel}>Физ. пробив</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.antiDefenseDegree}</span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>Маг. пробив</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.antiResistanceDegree}</span></div>
+              <hr className={styles.propsDivider} />
+              <div className={styles.propRow}><span className={styles.propLabel}>Крит. урон</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.critDamageBonus.toLocaleString()}</span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>Крит. шанс</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.critRate.toLocaleString()}</span></div>
+              <hr className={styles.propsDivider} />
+              <div className={styles.propRow}><span className={styles.propLabel}>Меткость</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.attack}</span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>Уклонение</span><span className={`${styles.propValue} ${styles.defColor}`}>{props.armor}</span></div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      {/* ===== CONTENT ===== */}
+      <main className={styles.content}>
+        {/* Рейтинги */}
         {player.battleStats.length > 0 && (
-          <div className={styles.ratingCol}>
+          <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Текущий рейтинг</h2>
-            <div className={styles.statsGrid}>
-              {player.battleStats.map((stat) => (
-                <div key={stat.matchPattern} className={styles.statCard}>
-                  <div className={styles.statHeader}>{getMatchPatternName(stat.matchPattern)}</div>
-                  <div className={styles.statRow}>
-                    <span className={styles.statLabel}>Рейтинг</span>
-                    <span className={styles.statValue}>{stat.score}</span>
+            <div className={styles.ratingsRow}>
+              {player.battleStats.map((stat) => {
+                const wr = stat.battleCount > 0
+                  ? Math.round((stat.winCount / stat.battleCount) * 100)
+                  : 0
+                const wrColor = wr >= 60 ? 'var(--success)' : wr >= 50 ? 'var(--warning)' : 'var(--danger)'
+                return (
+                  <div key={stat.matchPattern} className={styles.ratingCard}>
+                    <div className={styles.ratingCardTitle}>
+                      {stat.matchPattern === 0 ? '⚔ Порядок' : '💀 Хаос'}
+                    </div>
+                    <div className={styles.ratingCardScore}>
+                      {stat.score}
+                      <span className={styles.ratingCardRank}>#{stat.rank}</span>
+                    </div>
+                    <div className={styles.wrBar}>
+                      <div className={styles.wrTrack}>
+                        <div className={styles.wrFill} style={{ width: `${wr}%`, background: wrColor }} />
+                      </div>
+                      <span className={styles.wrLabel}>{wr}%</span>
+                    </div>
+                    <div className={styles.ratingCardMeta}>
+                      {stat.battleCount} боёв · {stat.winCount}W
+                    </div>
+                    <div className={styles.ratingCardMeta}>
+                      Нед: {stat.weekBattleCount}б / {stat.weekWinCount}W
+                    </div>
                   </div>
-                  <div className={styles.statRow}>
-                    <span className={styles.statLabel}>Ранг</span>
-                    <span className={styles.statValue}>#{stat.rank}</span>
-                  </div>
-                  <div className={styles.statRow}>
-                    <span className={styles.statLabel}>Винрейт</span>
-                    <span className={styles.statValue}>{calcWinRate(stat.winCount, stat.battleCount)}</span>
-                  </div>
-                  <div className={styles.statRow}>
-                    <span className={styles.statLabel}>Бои</span>
-                    <span className={styles.statValue}>{stat.battleCount}</span>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
 
-        <div className={styles.propsCol}>
-          <h2 className={styles.sectionTitle}>Характеристики</h2>
-          {propsQuery.isLoading && <div className={styles.center}><Spinner size="sm" /></div>}
-          {props && (
-            <div className={styles.propsTooltip}>
-            <div className={styles.propsTooltipHeader}>
-              <span className={styles.propsTooltipIcon}>❤️</span>
-              <span className={styles.propsHp}>{props.hp.toLocaleString()}</span>
-              <span className={styles.propsTooltipIcon}>💧</span>
-              <span className={styles.propsMp}>{props.mp.toLocaleString()}</span>
-            </div>
-            <div className={styles.propsTooltipBody}>
-              <div className={styles.propsInnerCol}>
-                <div className={styles.propRow}><span className={styles.propLabel}>ПА</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.attackDegree}</span></div>
-                <div className={styles.propRow}><span className={styles.propLabel}>ПЗ</span><span className={`${styles.propValue} ${styles.defColor}`}>{props.defendDegree}</span></div>
-                <div className={styles.propRow}><span className={styles.propLabel}>БУ</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.peakGrade}</span></div>
-                <div className={styles.propRow}><span className={styles.propLabel}>БД</span><span className={styles.propValue}>{props.vigour}</span></div>
-                <div className={styles.propRow}><span className={styles.propLabel}>Физ. атака</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.damageLow} – {props.damageHigh}</span></div>
-                <div className={styles.propRow}><span className={styles.propLabel}>Маг. атака</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.damageMagicLow} – {props.damageMagicHigh}</span></div>
-              </div>
-              <div className={styles.propsInnerCol}>
-                <div className={styles.propRow}><span className={styles.propLabel}>Крит. урон</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.critDamageBonus.toLocaleString()}</span></div>
-                <div className={styles.propRow}><span className={styles.propLabel}>Крит. шанс</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.critRate.toLocaleString()}</span></div>
-                <div className={styles.propRow}><span className={styles.propLabel}>Физ. защита</span><span className={`${styles.propValue} ${styles.defColor}`}>{props.defense.toLocaleString()}</span></div>
-                <div className={styles.propRow}><span className={styles.propLabel}>Маг. защита</span><span className={`${styles.propValue} ${styles.defColor}`}>{props.resistance[0].toLocaleString()}</span></div>
-                <div className={styles.propRow}><span className={styles.propLabel}>Пробив. физ.</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.antiDefenseDegree}</span></div>
-                <div className={styles.propRow}><span className={styles.propLabel}>Пробив. маг.</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.antiResistanceDegree}</span></div>
-              </div>
-            </div>
-            </div>
+        {/* График рейтинга */}
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>📈 График рейтинга</h2>
+            <select
+              className={styles.select}
+              value={matchPattern ?? ''}
+              onChange={(e) => {
+                setMatchPattern(e.target.value ? Number(e.target.value) : undefined)
+                setMatchPage(1)
+              }}
+            >
+              <option value="">Все типы</option>
+              <option value="0">Порядок</option>
+              <option value="1">Хаос</option>
+            </select>
+          </div>
+          {scoreHistory && scoreHistory.length > 0 && (
+            <ScoreChart data={scoreHistory} />
+          )}
+          {scoreHistory && scoreHistory.length === 0 && (
+            <p className={styles.empty}>Нет данных истории рейтинга</p>
           )}
         </div>
-      </div>
 
-      {/* График рейтинга */}
-      <div className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>График рейтинга</h2>
-          <select
-            className={styles.select}
-            value={matchPattern ?? ''}
-            onChange={(e) => {
-              setMatchPattern(e.target.value ? Number(e.target.value) : undefined)
-              setMatchPage(1)
-            }}
-          >
-            <option value="">Все типы</option>
-            <option value="0">Порядок</option>
-            <option value="1">Хаос</option>
-          </select>
-        </div>
-        {historyQuery.isLoading && <div className={styles.center}><Spinner size="sm" /></div>}
-        {historyQuery.data && historyQuery.data.length > 0 && (
-          <ScoreChart data={historyQuery.data} />
-        )}
-      </div>
-
-      {/* Матчи */}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Матчи</h2>
-        {matchesQuery.isLoading && <div className={styles.center}><Spinner size="sm" /></div>}
-        {matchesQuery.data && (
-          <>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>#ID</th>
-                  <th>Тип боя</th>
-                  <th>Команда A</th>
-                  <th>Команда B</th>
-                  <th>Результат</th>
-                  <th>Δ Рейтинг</th>
-                  <th>Дата</th>
-                </tr>
-              </thead>
-              <tbody>
-                {matchesQuery.data.items.map((m) => (
-                  <tr key={m.matchId} className={m.isWinner ? styles.win : styles.loss}>
-                    <td><Link to={`/matches/${m.matchId}`}>#{m.matchId}</Link></td>
-                    <td>{getMatchPatternName(m.match.matchPattern)}</td>
-                    <td><Link to={`/teams/${m.match.teamAId}`}>{matchTeamNames[m.match.teamAId] ?? m.match.teamAId}</Link></td>
-                    <td><Link to={`/teams/${m.match.teamBId}`}>{matchTeamNames[m.match.teamBId] ?? m.match.teamBId}</Link></td>
-                    <td className={m.isWinner ? styles.winText : styles.lossText}>
-                      {m.isWinner ? 'Победа' : 'Поражение'}
-                    </td>
-                    <td>{formatScoreDelta(m.scoreBefore, m.scoreAfter)}</td>
-                    <td className={styles.date}>{formatDateTime(m.match.createdAt)}</td>
+        {/* Матчи */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>⚔ Матчи</h2>
+          {matchesQuery.isLoading && <div className={styles.center}><Spinner size="sm" /></div>}
+          {matchesQuery.data && (
+            <>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Матч</th>
+                    <th>Тип боя</th>
+                    <th>Моя команда</th>
+                    <th>Противник</th>
+                    <th>Результат</th>
+                    <th>Δ Рейтинг</th>
+                    <th>Дата</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            <Pagination
-              page={matchPage}
-              total={matchesQuery.data.total}
-              pageSize={PAGE_SIZE}
-              onPageChange={setMatchPage}
-            />
-          </>
-        )}
-      </div>
+                </thead>
+                <tbody>
+                  {matchesQuery.data.items.map((m) => {
+                    const myTeamId = m.teamId
+                    const isTeamA = m.match.teamAId === myTeamId
+                    const opponentId = isTeamA ? m.match.teamBId : m.match.teamAId
+                    const opponentName = isTeamA
+                      ? (m.match.teamBName ?? m.match.teamBId)
+                      : (m.match.teamAName ?? m.match.teamAId)
+                    const myTeamName = isTeamA
+                      ? (m.match.teamAName ?? m.match.teamAId)
+                      : (m.match.teamBName ?? m.match.teamBId)
+                    return (
+                      <tr key={m.matchId} className={m.isWinner ? styles.win : styles.loss}>
+                        <td>
+                          <MatchTooltip matchId={m.matchId}>
+                            <Link to={`/matches/${m.matchId}`}>#{m.matchId}</Link>
+                          </MatchTooltip>
+                        </td>
+                        <td>{getMatchPatternName(m.match.matchPattern)}</td>
+                        <td>
+                          <TeamTooltip teamId={myTeamId} teamName={String(myTeamName)}>
+                            <Link to={`/teams/${myTeamId}`}>{myTeamName}</Link>
+                          </TeamTooltip>
+                        </td>
+                        <td>
+                          <TeamTooltip teamId={opponentId} teamName={String(opponentName)} currentTeamId={player.teamId} currentPlayerId={player.id}>
+                            <Link to={`/teams/${opponentId}`}>{opponentName}</Link>
+                          </TeamTooltip>
+                        </td>
+                        <td className={m.isWinner ? styles.winText : styles.lossText}>
+                          {m.isWinner ? 'Победа' : 'Поражение'}
+                        </td>
+                        <td>{formatScoreDelta(m.scoreBefore, m.scoreAfter)}</td>
+                        <td className={styles.date}>{formatDateTime(m.match.createdAt)}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+              <Pagination
+                page={matchPage}
+                total={matchesQuery.data.total}
+                pageSize={PAGE_SIZE}
+                onPageChange={setMatchPage}
+              />
+            </>
+          )}
+        </div>
+      </main>
     </div>
   )
 }

@@ -6,6 +6,7 @@ import type {
   TeamMember,
   MatchListItem,
   ScoreHistoryItem,
+  TeamH2H,
 } from '@/shared/types/api'
 
 /** Параметры запроса списка команд */
@@ -14,6 +15,7 @@ export interface GetTeamsParams {
   sortBy?: 'ratingOrder' | 'ratingChaos'
   page?: number
   pageSize?: number
+  include?: string
 }
 
 /** Получить список команд */
@@ -27,6 +29,7 @@ export interface SearchTeamsParams {
   zoneId?: number
   page?: number
   pageSize?: number
+  include?: string
 }
 
 /** Поиск команд по имени */
@@ -35,8 +38,8 @@ export function searchTeams(params: SearchTeamsParams) {
 }
 
 /** Получить детали команды */
-export function getTeamById(teamId: number) {
-  return apiGet<TeamDetail>(`/api/arena/teams/${teamId}`)
+export function getTeamById(teamId: number, include?: string) {
+  return apiGet<TeamDetail>(`/api/arena/teams/${teamId}`, include ? { include } : undefined)
 }
 
 /** Получить участников команды */
@@ -71,4 +74,9 @@ export function getTeamScoreHistory(teamId: number, params?: GetScoreHistoryPara
     `/api/arena/teams/${teamId}/score-history`,
     params as Record<string, number | undefined>,
   )
+}
+
+/** Получить статистику личных встреч (H2H) */
+export function getTeamH2H(teamId: number, opponentTeamId: number, playerId?: number) {
+  return apiGet<TeamH2H>(`/api/arena/teams/${teamId}/h2h/${opponentTeamId}`, playerId ? { playerId } : undefined)
 }

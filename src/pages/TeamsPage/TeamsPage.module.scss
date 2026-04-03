@@ -9,6 +9,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-md);
+  flex-wrap: wrap;
 }
 
 .title {
@@ -19,6 +20,8 @@
 .filters {
   display: flex;
   gap: var(--space-sm);
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .searchInput {
@@ -62,10 +65,253 @@
   padding: var(--space-2xl);
 }
 
+/* ── View Toggle ── */
+
+.viewToggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.toggleBtn {
+  padding: var(--space-sm) var(--space-md);
+  background: var(--card);
+  color: var(--text-secondary);
+  border: none;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  line-height: 1;
+  transition: background var(--transition-fast), color var(--transition-fast);
+
+  &:not(:last-child) {
+    border-right: 1px solid var(--border);
+  }
+
+  &:hover {
+    background: var(--card-hover);
+  }
+
+  &.active {
+    background: var(--primary);
+    color: #fff;
+  }
+}
+
+/* ── Rank badges ── */
+
+.medal {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.rankNum {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Cards View (Variant A) ── */
+
+.cardsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.teamCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  text-decoration: none;
+  color: var(--text);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+
+  &:hover {
+    background: var(--card-hover);
+    border-color: var(--primary);
+  }
+}
+
+.teamCardTop {
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  background: color-mix(in srgb, var(--primary) 5%, var(--card));
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.cardRank {
+  min-width: 36px;
+  text-align: center;
+}
+
+.cardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cardName {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
+.cardMeta {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.cardRatings {
+  display: flex;
+  gap: var(--space-lg);
+  border-top: 1px solid var(--border);
+  padding: var(--space-sm) 0 0 0;
+  @media (max-width: 600px) {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+}
+
+/* ── Card Rating Block (inside card) ── */
+
+.cardRatingBlock {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.cardRatingHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.cardRatingIcon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.cardRatingLabel {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.cardRatingValue {
+  font-weight: 700;
+  font-size: var(--font-size-md);
+  font-variant-numeric: tabular-nums;
+}
+
+.cardRatingRank {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.cardRatingDetails {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.cardRatingBattles {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.cardRatingWeek {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+/* ── Members Row (Variant A cards) ── */
+
+.membersRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0 0 0;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.membersIcons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.memberIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  transition: transform var(--transition-fast);
+
+  &:hover {
+    transform: scale(1.2);
+    z-index: 1;
+  }
+}
+
+.memberIconCaptain {
+  border-color: #f1c40f;
+  box-shadow: 0 0 4px rgba(241, 196, 15, 0.4);
+}
+
+.membersCaptain {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+/* ── Members Icons (Variant B table) ── */
+
+.membersIconsCompact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.memberIconSmall {
+  width: 22px;
+  height: 22px;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cardDate {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+/* ── Table View (Variant B) ── */
+
 .table {
   background: var(--card);
   border-radius: var(--radius-md);
-  overflow: hidden;
 
   th,
   td {
@@ -81,6 +327,15 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     background: var(--bg-secondary);
+    white-space: nowrap;
+
+    &:first-child {
+      border-top-left-radius: var(--radius-md);
+    }
+
+    &:last-child {
+      border-top-right-radius: var(--radius-md);
+    }
   }
 
   tbody tr {
@@ -92,11 +347,72 @@
   }
 }
 
+.topRow {
+  background: color-mix(in srgb, var(--primary) 5%, var(--card));
+}
+
+.rankCell {
+  text-align: center;
+  width: 48px;
+}
+
 .teamLink {
   font-weight: 500;
+}
+
+.ratingCell {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.tableRank {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.tableBattles {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.wrCell {
+  min-width: 120px;
 }
 
 .date {
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+/* ── Win Rate Bar ── */
+
+.wrBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.wrBarTrack {
+  flex: 1;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 60px;
+}
+
+.wrBarFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.wrBarLabel {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 36px;
+  text-align: right;
 }

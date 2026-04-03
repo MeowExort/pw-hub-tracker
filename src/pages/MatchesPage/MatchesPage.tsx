@@ -6,7 +6,6 @@ import { Spinner } from '@/shared/ui/Spinner'
 import { ErrorMessage } from '@/shared/ui/ErrorMessage'
 import { Pagination } from '@/shared/ui/Pagination'
 import { formatDateTime, getMatchPatternName, formatScoreDelta } from '@/shared/utils/format'
-import { useTeamNames } from '@/shared/hooks/useTeamName'
 import styles from './MatchesPage.module.scss'
 
 const PAGE_SIZE = 20
@@ -20,9 +19,6 @@ export function MatchesPage() {
     queryKey: ['matches', { page, matchPattern }],
     queryFn: () => getMatches({ page, pageSize: PAGE_SIZE, matchPattern }),
   })
-
-  const teamIds = data?.items.flatMap((m) => [m.teamAId, m.teamBId]) ?? []
-  const teamNames = useTeamNames(teamIds)
 
   return (
     <div className={styles.page}>
@@ -69,7 +65,7 @@ export function MatchesPage() {
                       to={`/teams/${m.teamAId}`}
                       className={m.winnerTeamId === m.teamAId ? styles.winner : ''}
                     >
-                      {teamNames[m.teamAId] ?? m.teamAId}
+                      {m.teamAName ?? m.teamAId}
                     </Link>
                   </td>
                   <td>
@@ -77,7 +73,7 @@ export function MatchesPage() {
                       to={`/teams/${m.teamBId}`}
                       className={m.winnerTeamId === m.teamBId ? styles.winner : ''}
                     >
-                      {teamNames[m.teamBId] ?? m.teamBId}
+                      {m.teamBName ?? m.teamBId}
                     </Link>
                   </td>
                   <td>{formatScoreDelta(m.teamAScoreBefore, m.teamAScoreAfter)}</td>

@@ -19,6 +19,15 @@ export interface TeamListItem {
   ratingChaos?: number
   ratingOrder?: number
   realRating?: number
+  battleStats?: BattleStat[]
+  members?: TeamListMember[]
+}
+
+/** Краткая информация об участнике (в списке команд) */
+export interface TeamListMember {
+  playerId: number
+  cls: number
+  name: string | null
 }
 
 /** Боевая статистика */
@@ -44,6 +53,7 @@ export interface TeamDetail {
   updatedAt: string
   members: TeamDetailMember[]
   battleStats: BattleStat[]
+  scoreHistory?: ScoreHistoryItem[]
 }
 
 /** Участник команды (в деталях команды) */
@@ -53,6 +63,7 @@ export interface TeamDetailMember {
   playerCls?: number | null
   playerName?: string | null
   playerServer?: string | null
+  battleStats?: BattleStat[]
 }
 
 /** Участник команды (расширенный) */
@@ -70,12 +81,52 @@ export interface TeamMember {
   }
 }
 
+/** Статистика H2H (общая) */
+export interface H2HStats {
+  totalMatches: number
+  wins: number
+  losses: number
+  winRate: number
+  lastMatchAt: string
+}
+
+/** Статистика H2H по типу боя */
+export interface H2HPatternStats extends H2HStats {
+  matchPattern: number
+  avgScoreChange: number
+}
+
+/** Матч в истории H2H */
+export interface H2HMatch {
+  matchId: number
+  matchPattern: number
+  isWin: boolean
+  teamScoreBefore: number
+  teamScoreAfter: number
+  opponentScoreBefore: number
+  opponentScoreAfter: number
+  createdAt: string
+}
+
+/** Статистика личных встреч (Head-to-Head) */
+export interface TeamH2H {
+  teamId: number
+  opponentTeamId: number
+  team: { id: number; name: string }
+  opponent: { id: number; name: string }
+  overall: H2HStats
+  byMatchPattern: H2HPatternStats[]
+  recentMatches: H2HMatch[]
+}
+
 /** Элемент списка матчей */
 export interface MatchListItem {
   id: number
   matchPattern: number
   teamAId: number
+  teamAName?: string
   teamBId: number
+  teamBName?: string
   winnerTeamId: number | null
   loserTeamId: number | null
   teamAScoreBefore: number | null
@@ -106,6 +157,7 @@ export interface MatchDetail extends MatchListItem {
 export interface PlayerDetail {
   id: number
   teamId: number
+  teamName?: string
   cls: number
   server?: string | null
   name?: string | null
@@ -115,6 +167,9 @@ export interface PlayerDetail {
   lastVisiteTimestamp: number
   updatedAt: string
   battleStats: BattleStat[]
+  properties?: PlayerProperty
+  scoreHistory?: ScoreHistoryItem[]
+  team?: { id: number; name: string; zoneId: number }
 }
 
 /** Матч игрока */
@@ -128,7 +183,9 @@ export interface PlayerMatchItem {
   match: {
     matchPattern: number
     teamAId: number
+    teamAName?: string
     teamBId: number
+    teamBName?: string
     winnerTeamId: number | null
     createdAt: string
   }

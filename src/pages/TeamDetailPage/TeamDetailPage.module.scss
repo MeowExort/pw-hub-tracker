@@ -1,73 +1,156 @@
-.page {
+/* Layout: Sidebar + Content */
+.layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  position: sticky;
+  top: calc(56px + var(--space-lg));
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
-}
-
-.header {
-  display: flex;
-  align-items: center;
   gap: var(--space-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
 }
 
-.title {
-  font-size: var(--font-size-2xl);
+.sidebarHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--border);
+}
+
+.teamName {
+  font-size: var(--font-size-xl);
   font-weight: 700;
+  margin: 0;
 }
 
 .zone {
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-sm);
-  background: var(--card);
+  background: var(--bg-secondary);
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
+  width: fit-content;
+}
+
+.memberCount {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* Sidebar rating block */
+.sideRating {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--border);
+
+  &:last-child, &:nth-last-child(2) {
+    border-bottom: none;
+  }
+}
+
+.sideRatingTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.sideRatingScore {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+
+.sideRatingRank {
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+/* WR bar in sidebar */
+.sideWrBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.sideWrTrack {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.sideWrFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width var(--transition-fast);
+}
+
+.sideWrLabel {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  min-width: 36px;
+  text-align: right;
+}
+
+.sideRatingMeta {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+/* Captain */
+.sideCaptain {
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border);
+}
+
+.sideSectionLabel {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-xs);
+}
+
+.captainLink {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+/* ===== CONTENT ===== */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  min-width: 0;
 }
 
 .center {
   display: flex;
   justify-content: center;
   padding: var(--space-xl);
-}
-
-.statsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--space-md);
-}
-
-.statCard {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--space-md);
-}
-
-.statHeader {
-  font-size: var(--font-size-lg);
-  font-weight: 700;
-  margin-bottom: var(--space-sm);
-  color: var(--primary);
-}
-
-.statRow {
-  display: flex;
-  justify-content: space-between;
-  padding: var(--space-xs) 0;
-  border-bottom: 1px solid var(--border);
-
-  &:last-child {
-    border-bottom: none;
-  }
-}
-
-.statLabel {
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
-}
-
-.statValue {
-  font-weight: 600;
-  font-size: var(--font-size-sm);
 }
 
 .section {
@@ -102,17 +185,10 @@
   }
 }
 
-.chart {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--space-md);
-}
-
 .table {
   background: var(--card);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  overflow: visible;
 
   th,
   td {
@@ -156,4 +232,15 @@
   color: var(--text-muted);
   text-align: center;
   padding: var(--space-lg);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+  }
 }

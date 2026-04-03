@@ -8,8 +8,8 @@ import type {
 } from '@/shared/types/api'
 
 /** Получить детали игрока */
-export function getPlayerById(server: string, playerId: number) {
-  return apiGet<PlayerDetail>(`/api/arena/players/${server}/${playerId}`)
+export function getPlayerById(server: string, playerId: number, include?: string) {
+  return apiGet<PlayerDetail>(`/api/arena/players/${server}/${playerId}`, include ? { include } : undefined)
 }
 
 /** Параметры запроса матчей игрока */

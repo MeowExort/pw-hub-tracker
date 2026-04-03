@@ -8,6 +8,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
 }
 
 .title {
@@ -19,6 +21,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  flex-wrap: wrap;
 }
 
 .select {
@@ -66,10 +69,69 @@
   }
 }
 
+/* Распределение классов */
+.classDistribution {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.classChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  cursor: default;
+}
+
+.classChipIcon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.classChipCount {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+/* WR Bar */
+.wrBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 80px;
+}
+
+.wrBarTrack {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.wrBarFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.wrBarLabel {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  min-width: 32px;
+  text-align: right;
+}
+
 /* Карточки */
 .cardsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: var(--space-md);
 }
 
@@ -81,11 +143,17 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  transition: border-color var(--transition-fast);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 
   &:hover {
     border-color: var(--border-light);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
+}
+
+.captainCard {
+  border-color: var(--warning, #f39c12);
+  background: linear-gradient(135deg, var(--card) 0%, rgba(243, 156, 18, 0.05) 100%);
 }
 
 .cardHeader {
@@ -94,20 +162,41 @@
   gap: var(--space-sm);
 }
 
+.cardNameBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .cardName {
   font-weight: 700;
   font-size: var(--font-size-md);
   color: var(--primary);
   text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
   &:hover {
     text-decoration: underline;
   }
 }
 
+.captainBadge {
+  font-size: var(--font-size-xs);
+  color: var(--warning, #f39c12);
+  font-weight: 600;
+}
+
+.captainBadgeSmall {
+  margin-left: var(--space-xs);
+  font-size: var(--font-size-xs);
+}
+
 .classIcon {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -128,15 +217,34 @@
   background: var(--bg-secondary);
   border-radius: var(--radius-sm);
   padding: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .cardStatTitle {
   font-size: var(--font-size-xs);
   font-weight: 700;
   color: var(--primary);
-  margin-bottom: var(--space-xs);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.cardStatScore {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+}
+
+.scoreValue {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
+.scoreRank {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: 600;
 }
 
 .cardStatRow {
@@ -158,13 +266,21 @@
   white-space: nowrap;
 }
 
+.cardStatWeek {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  border-top: 1px dashed var(--border);
+  padding-top: 4px;
+  margin-top: 2px;
+}
+
 /* Таблица */
 .table {
   width: 100%;
   border-collapse: collapse;
   background: var(--card);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  overflow: visible;
   table-layout: auto;
 
   th,
@@ -175,11 +291,6 @@
     white-space: nowrap;
     vertical-align: middle;
     width: 1%;
-
-    // Первая колонка (ID) занимает оставшееся пространство
-    //&:first-child {
-    //  width: auto;
-    //}
   }
 
   th {
@@ -210,6 +321,26 @@
     align-items: center;
     gap: var(--space-sm);
   }
+}
+
+.ratingCell {
+  strong {
+    font-size: var(--font-size-md);
+  }
+}
+
+.rankLabel {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.wrCell {
+  min-width: 100px;
+}
+
+.weekCell {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
 }
 
 .date {
