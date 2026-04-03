@@ -53,12 +53,12 @@ function fmt(value: number): string {
 /** Страница сравнения кланов VoidBorn и Improve */
 export function MizarClanComparePage() {
   const allPlayers = useMemo(
-    () => [...VOIDBORN_IDS, ...IMPROVE_IDS].map((id) => ({ Id: id, Server: 'alkor' })),
+    () => [...VOIDBORN_IDS, ...IMPROVE_IDS].map((id) => ({ Id: id, Server: 'mizar' })),
     [],
   )
 
   const query = useQuery({
-    queryKey: ['clanCompare', 'alkor', 'properties'],
+    queryKey: ['clanCompare', 'mizar', 'properties'],
     queryFn: () => getPlayerPropertiesByIds(allPlayers),
   })
 
