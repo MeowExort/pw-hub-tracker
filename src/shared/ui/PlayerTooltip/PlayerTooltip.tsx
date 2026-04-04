@@ -10,8 +10,8 @@ import styles from './PlayerTooltip.module.scss'
 interface PlayerTooltipProps {
   playerId: number
   server: string
-  cls: number
-  name: string | null
+  cls: number | null | undefined
+  name: string | null | undefined
   isCaptain?: boolean
   children: React.ReactNode
 }
@@ -146,13 +146,13 @@ export function PlayerTooltip({ playerId, server, cls, name, isCaptain, children
           {player && (
             <>
               <div className={styles.header}>
-                <img src={getClassIcon(cls)} alt={getClassName(cls)} className={styles.classIcon} />
+                {cls != null && <img src={getClassIcon(cls)} alt={getClassName(cls)} className={styles.classIcon} />}
                 <div className={styles.headerInfo}>
                   <span className={styles.playerName}>
                     {name ?? player.name ?? `#${playerId}`}
                     {isCaptain && <span className={styles.captainBadge}> 👑</span>}
                   </span>
-                  <span className={styles.className}>{getClassName(cls)}</span>
+                  <span className={styles.className}>{cls != null ? getClassName(cls) : '—'}</span>
                   {player.teamName && (
                     <span className={styles.teamName}>Команда: {player.teamName}</span>
                   )}
