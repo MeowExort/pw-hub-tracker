@@ -86,7 +86,7 @@ export function TeamDetailPage() {
                                 {stat.matchPattern === 0 ? '⚔ Порядок' : '💀 Хаос'}
                             </div>
                             <div className={styles.sideRatingScore}>
-                                {Math.round(stat.score / memberCount)}
+                                {Math.trunc(stat.score / memberCount)}
                                 <span className={styles.sideRatingRank}>#{stat.rank}</span>
                             </div>
                             <div className={styles.sideWrBar}>

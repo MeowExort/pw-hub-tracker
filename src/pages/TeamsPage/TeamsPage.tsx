@@ -82,7 +82,7 @@ function CardRatingBlock({ icon, label, stat, memberCount }: { icon: string; lab
       <div className={styles.cardRatingHead}>
         <span className={styles.cardRatingIcon}>{icon}</span>
         <span className={styles.cardRatingLabel}>{label}</span>
-        <span className={styles.cardRatingValue}>{memberCount > 0 ? Math.round(stat.score / memberCount) : stat.score}</span>
+        <span className={styles.cardRatingValue}>{memberCount > 0 ? Math.trunc(stat.score / memberCount) : stat.score}</span>
         {stat.rank > 0 && <span className={styles.cardRatingRank}>#{stat.rank}</span>}
       </div>
       <div className={styles.cardRatingDetails}>
@@ -402,12 +402,12 @@ export function TeamsPage() {
                     <td className={styles.ratingCell}>
                       {orderStat ? (
                         <span>
-                          <strong>{team.memberCount > 0 ? Math.round(orderStat.score / team.memberCount) : orderStat.score}</strong>
+                          <strong>{team.memberCount > 0 ? Math.trunc(orderStat.score / team.memberCount) : orderStat.score}</strong>
                           {orderStat.rank > 0 && <span className={styles.tableRank}> #{orderStat.rank}</span>}
                           <span className={styles.tableBattles}> · {orderStat.battleCount}</span>
                         </span>
                       ) : (
-                        team.ratingOrder != null ? Math.round(team.ratingOrder / (team.memberCount || 1)) : '—'
+                        team.ratingOrder != null ? Math.trunc(team.ratingOrder / (team.memberCount || 1)) : '—'
                       )}
                     </td>
                     <td className={styles.wrCell}>
@@ -418,12 +418,12 @@ export function TeamsPage() {
                     <td className={styles.ratingCell}>
                       {chaosStat ? (
                         <span>
-                          <strong>{team.memberCount > 0 ? Math.round(chaosStat.score / team.memberCount) : chaosStat.score}</strong>
+                          <strong>{team.memberCount > 0 ? Math.trunc(chaosStat.score / team.memberCount) : chaosStat.score}</strong>
                           {chaosStat.rank > 0 && <span className={styles.tableRank}> #{chaosStat.rank}</span>}
                           <span className={styles.tableBattles}> · {chaosStat.battleCount}</span>
                         </span>
                       ) : (
-                        team.ratingChaos != null ? Math.round(team.ratingChaos / (team.memberCount || 1)) : '—'
+                        team.ratingChaos != null ? Math.trunc(team.ratingChaos / (team.memberCount || 1)) : '—'
                       )}
                     </td>
                     <td className={styles.wrCell}>

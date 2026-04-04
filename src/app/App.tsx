@@ -7,6 +7,7 @@ import { PlayerDetailPage } from '@/pages/PlayerDetailPage'
 import { MatchesPage } from '@/pages/MatchesPage'
 import { MatchDetailPage } from '@/pages/MatchDetailPage'
 import { ClanComparePage } from '@/pages/ClanComparePage'
+import { PlayersPage } from '@/pages/PlayersPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import {CentaurClanComparePage} from "@/pages/CentaurClanComparePage";
 import { AnalyticsClassesPage } from '@/pages/AnalyticsClassesPage'
@@ -34,6 +35,7 @@ export function App() {
             <Route index element={<Navigate to="/teams" replace />} />
             <Route path="/teams" element={<TeamsPage />} />
             <Route path="/teams/:teamId" element={<TeamDetailPage />} />
+            <Route path="/players" element={<PlayersPage />} />
             <Route path="/players/:server/:playerId" element={<PlayerDetailPage />} />
             <Route path="/matches" element={<MatchesPage />} />
             <Route path="/matches/:matchId" element={<MatchDetailPage />} />

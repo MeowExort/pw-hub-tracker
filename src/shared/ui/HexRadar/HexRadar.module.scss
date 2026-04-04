@@ -1,0 +1,32 @@
+.wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.svg {
+  display: block;
+}
+
+.grid {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 0.5;
+}
+
+.axis {
+  stroke: var(--border);
+  stroke-width: 0.5;
+}
+
+.data {
+  fill: color-mix(in srgb, var(--primary) 25%, transparent);
+  stroke: var(--primary);
+  stroke-width: 1.5;
+}
+
+.label {
+  font-size: 9px;
+  fill: var(--text-secondary);
+  font-weight: 600;
+}

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e94560"/>
+      <stop offset="100%" style="stop-color:#ff6b6b"/>
+    </linearGradient>
+    <linearGradient id="text" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="100%" style="stop-color:#c0c0c0"/>
+    </linearGradient>
+  </defs>
+  <!-- Background rounded square -->
+  <rect width="512" height="512" rx="96" ry="96" fill="url(#bg)"/>
+  <!-- Decorative border -->
+  <rect x="16" y="16" width="480" height="480" rx="80" ry="80" fill="none" stroke="url(#accent)" stroke-width="8" opacity="0.6"/>
+  <!-- PW text -->
+  <text x="256" y="280" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="220" fill="url(#text)" text-anchor="middle" dominant-baseline="middle">PW</text>
+  <!-- Hub subtitle -->
+  <text x="256" y="400" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="80" fill="url(#accent)" text-anchor="middle" dominant-baseline="middle">HUB</text>
+  <!-- Small sword/cross accent at top -->
+  <line x1="256" y1="60" x2="256" y2="120" stroke="url(#accent)" stroke-width="6" stroke-linecap="round"/>
+  <line x1="236" y1="80" x2="276" y2="80" stroke="url(#accent)" stroke-width="6" stroke-linecap="round"/>
+</svg>

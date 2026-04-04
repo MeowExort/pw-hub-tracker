@@ -131,8 +131,10 @@ export interface MatchListItem {
   loserTeamId: number | null
   teamAScoreBefore: number | null
   teamAScoreAfter: number | null
+  teamAMemberCount: number | null
   teamBScoreBefore: number | null
   teamBScoreAfter: number | null
+  teamBMemberCount: number | null
   createdAt: string
 }
 
@@ -231,6 +233,60 @@ export interface PlayerProperty {
   antiResistanceDegree: number
   peakGrade: number
   updatedAt: string
+}
+
+/** Элемент списка игроков (страница "Игроки") */
+export interface PlayerListItem {
+  id: number
+  name: string | null
+  cls: number
+  server: string | null
+  teamId: number | null
+  teamName: string | null
+  properties: {
+    hp: number
+    mp: number
+    damageLow: number
+    damageHigh: number
+    damageMagicLow: number
+    damageMagicHigh: number
+    defense: number
+    resistance: number[]
+    attackDegree: number
+    defendDegree: number
+    vigour: number
+    antiDefenseDegree: number
+    antiResistanceDegree: number
+    peakGrade: number
+    updatedAt: string
+  } | null
+}
+
+/** Максимальные значения характеристик игроков */
+export interface PlayerMaxProperties {
+  hp: number
+  mp: number
+  damageLow: number
+  damageHigh: number
+  damageMagicLow: number
+  damageMagicHigh: number
+  defense: number
+  attack: number
+  armor: number
+  attackSpeed: number
+  runSpeed: number
+  attackDegree: number
+  defendDegree: number
+  critRate: number
+  damageReduce: number
+  prayspeed: number
+  critDamageBonus: number
+  invisibleDegree: number
+  antiInvisibleDegree: number
+  vigour: number
+  antiDefenseDegree: number
+  antiResistanceDegree: number
+  peakGrade: number
 }
 
 /** Результат пересборки матчей */

@@ -16,6 +16,12 @@
   font-weight: 700;
 }
 
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
 .select {
   padding: var(--space-sm) var(--space-md);
   border: 1px solid var(--border);
@@ -37,7 +43,87 @@
   padding: var(--space-2xl);
 }
 
+.empty {
+  text-align: center;
+  padding: var(--space-2xl);
+  color: var(--text-secondary);
+  font-size: var(--font-size-md);
+}
+
+.refreshBtn {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--text);
+  font-size: var(--font-size-md);
+  cursor: pointer;
+  line-height: 1;
+  transition: background var(--transition-fast), color var(--transition-fast);
+
+  &:hover {
+    background: var(--card-hover);
+    color: var(--primary);
+  }
+}
+
+.refreshSpin {
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── View Toggle ── */
+
+.viewToggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.toggleBtn {
+  padding: var(--space-sm) var(--space-md);
+  background: var(--card);
+  color: var(--text-secondary);
+  border: none;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  line-height: 1;
+  transition: background var(--transition-fast), color var(--transition-fast);
+
+  &:not(:last-child) {
+    border-right: 1px solid var(--border);
+  }
+
+  &:hover {
+    background: var(--card-hover);
+  }
+
+  &.active {
+    background: var(--primary);
+    color: #fff;
+  }
+}
+
+/* ── Delta Colors ── */
+
+.deltaPositive {
+  color: var(--success, #27ae60);
+}
+
+.deltaNegative {
+  color: var(--danger, #e74c3c);
+}
+
+/* ── Table View (Вариант 2) ── */
+
 .table {
+  width: 100%;
   background: var(--card);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -67,12 +153,224 @@
   }
 }
 
-.winner {
-  color: var(--success);
+.tableRow {
+  position: relative;
+}
+
+.rowWinA,
+.rowWinB {
+  border-left: none;
+}
+
+.patternBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
   font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.patternOrder,
+.patternChaos {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.teamLink {
+  color: var(--text);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--primary);
+    text-decoration: underline;
+  }
+}
+
+.matchIdLink {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.matchCell {
+  white-space: nowrap;
+}
+
+.teamCol {
+  width: 20%;
+}
+
+.teamColA {
+  text-align: right !important;
+}
+
+.teamCell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.scoreCell {
+  white-space: nowrap;
+  font-size: var(--font-size-sm);
+}
+
+.vsCell {
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  text-align: center;
+  padding-left: 2px !important;
+  padding-right: 2px !important;
+}
+
+.matchLink {
+  text-decoration: none;
+  color: var(--text);
+
+  &:hover {
+    color: var(--primary);
+  }
+}
+
+.scoreInline {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+
+.deltaInline {
+  font-size: var(--font-size-xs);
+}
+
+.vsInline {
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  margin: 0 2px;
+}
+
+.winner {
+  color: var(--success, #27ae60) !important;
+
+  .teamLink {
+    color: var(--success, #27ae60);
+  }
 }
 
 .date {
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+/* ── Cards View (Вариант 1) ── */
+
+.cardsList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-md);
+}
+
+.card {
+  display: block;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  text-decoration: none;
+  color: var(--text);
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
+
+  &:hover {
+    background: var(--card-hover);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  }
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-sm);
+}
+
+.cardPattern {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cardDate {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.cardTeam {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.cardWinner {
+  .cardTeamName {
+    font-weight: 700;
+  }
+}
+
+.cardTeamName {
+  font-size: var(--font-size-md);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.cardScore {
+  font-size: var(--font-size-sm);
+}
+
+.cardDelta {
+  font-size: var(--font-size-xs);
+}
+
+.cardVs {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.cardFooter {
+  margin-top: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border);
+}
+
+.cardMore {
+  display: inline-block;
+  font-size: var(--font-size-sm);
+  color: var(--primary);
+  font-weight: 600;
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast), color var(--transition-fast);
+
+  .card:hover & {
+    background: var(--primary);
+    color: #fff;
+  }
 }

@@ -6,6 +6,7 @@ import type { PlayerProperty } from '@/shared/types/api'
 import { Spinner } from '@/shared/ui/Spinner'
 import { ErrorMessage } from '@/shared/ui/ErrorMessage'
 import { formatPlayerName, getClassName, getClassIcon } from '@/shared/utils/format'
+import { PlayerTooltip } from '@/shared/ui/PlayerTooltip'
 import { AURA_IDS, ETERNALS_IDS } from './clans'
 import styles from './ClanComparePage.module.scss'
 
@@ -464,12 +465,14 @@ function PlayersTable({
             <tr key={p.playerId}>
               <td>{i + 1}</td>
               <td>
-                <Link to={`/players/${p.server}/${p.playerId}`} className={styles.playerLink}>
-                  {p.playerCls != null && (
-                    <img src={getClassIcon(p.playerCls)} alt={getClassName(p.playerCls)} className={styles.classIcon} />
-                  )}
-                  {formatPlayerName(p.playerId, p.playerName)}
-                </Link>
+                <PlayerTooltip playerId={p.playerId} server={p.server} cls={p.playerCls} name={p.playerName}>
+                  <Link to={`/players/${p.server}/${p.playerId}`} className={styles.playerLink}>
+                    {p.playerCls != null && (
+                      <img src={getClassIcon(p.playerCls)} alt={getClassName(p.playerCls)} className={styles.classIcon} />
+                    )}
+                    {formatPlayerName(p.playerId, p.playerName)}
+                  </Link>
+                </PlayerTooltip>
               </td>
               <td>
                 {p.playerCls != null ? getClassName(p.playerCls) : '—'}

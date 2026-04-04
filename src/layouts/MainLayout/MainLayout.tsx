@@ -19,6 +19,12 @@ export function MainLayout() {
                             Команды
                         </NavLink>
                         <NavLink
+                            to="/players"
+                            className={({isActive}) => `${styles.link} ${isActive ? styles.active : ''}`}
+                        >
+                            Игроки
+                        </NavLink>
+                        <NavLink
                             to="/matches"
                             className={({isActive}) => `${styles.link} ${isActive ? styles.active : ''}`}
                         >

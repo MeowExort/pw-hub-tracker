@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { getTeamById, getTeamH2H } from '@/shared/api/teams'
@@ -29,7 +30,7 @@ function wrColor(wr: number): string {
 
 function StatBlock({ label, icon, stat, memberCount }: { label: string; icon: string; stat: BattleStat; memberCount: number }) {
   const wr = wrPercent(stat.winCount, stat.battleCount)
-  const realScore = memberCount > 0 ? Math.round(stat.score / memberCount) : stat.score
+  const realScore = memberCount > 0 ? Math.trunc(stat.score / memberCount) : stat.score
   return (
     <div className={styles.statBlock}>
       <div className={styles.statHeader}>
@@ -79,6 +80,16 @@ export function TeamTooltip({ teamId, teamName, currentTeamId, currentPlayerId, 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const tooltipRef = useRef<HTMLAnchorElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+
+  const updatePosition = useCallback(() => {
+    if (!wrapperRef.current) return
+    const rect = wrapperRef.current.getBoundingClientRect()
+    setPos({
+      top: rect.bottom + window.scrollY + 8,
+      left: rect.left + rect.width / 2 + window.scrollX,
+    })
+  }, [])
 
   const { data: team, isLoading } = useQuery({
     queryKey: ['team-tooltip', teamId],
@@ -117,20 +128,27 @@ export function TeamTooltip({ teamId, teamName, currentTeamId, currentPlayerId, 
   }, [])
 
   useEffect(() => {
-    if (visible && tooltipRef.current) {
+    if (visible) {
+      updatePosition()
+    }
+  }, [visible, updatePosition])
+
+  useEffect(() => {
+    if (visible && tooltipRef.current && pos) {
       const rect = tooltipRef.current.getBoundingClientRect()
       if (rect.right > window.innerWidth) {
         tooltipRef.current.style.left = 'auto'
-        tooltipRef.current.style.right = '0'
+        tooltipRef.current.style.right = `${window.innerWidth - (pos.left + window.scrollX)}px`
       }
       if (rect.bottom > window.innerHeight) {
-        tooltipRef.current.style.top = 'auto'
-        tooltipRef.current.style.bottom = '100%'
-        tooltipRef.current.style.marginBottom = '8px'
-        tooltipRef.current.style.marginTop = '0'
+        const wrapperRect = wrapperRef.current?.getBoundingClientRect()
+        if (wrapperRect) {
+          tooltipRef.current.style.top = `${wrapperRect.top + window.scrollY - 8}px`
+          tooltipRef.current.style.transform = 'translateX(-50%) translateY(-100%)'
+        }
       }
     }
-  }, [visible, team, h2h])
+  }, [visible, team, h2h, pos])
 
   const memberCount = team?.members?.length ?? 0
   const orderStat = team?.battleStats?.find((s) => s.matchPattern === 0)
@@ -144,11 +162,12 @@ export function TeamTooltip({ teamId, teamName, currentTeamId, currentPlayerId, 
       onMouseLeave={handleLeave}
     >
       {children}
-      {visible && (
+      {visible && pos && createPortal(
         <Link
           to={`/teams/${teamId}`}
           className={styles.tooltip}
           ref={tooltipRef}
+          style={{ position: 'absolute', top: pos.top, left: pos.left, transform: 'translateX(-50%)' }}
           onMouseEnter={handleEnter}
           onMouseLeave={handleLeave}
           onClick={(e) => e.stopPropagation()}
@@ -256,7 +275,8 @@ export function TeamTooltip({ teamId, teamName, currentTeamId, currentPlayerId, 
               )}
             </>
           )}
-        </Link>
+        </Link>,
+        document.body,
       )}
     </div>
   )

@@ -11,6 +11,8 @@ import {
   formatScoreDelta,
   formatPlayerName,
 } from '@/shared/utils/format'
+import { PlayerTooltip } from '@/shared/ui/PlayerTooltip'
+import { TeamTooltip } from '@/shared/ui/TeamTooltip'
 import styles from './MatchDetailPage.module.scss'
 
 /** Страница деталей матча */
@@ -43,9 +45,11 @@ export function MatchDetailPage() {
 
       <div className={styles.versus}>
         <div className={`${styles.team} ${data.winnerTeamId === data.teamAId ? styles.winner : ''}`}>
-          <Link to={`/teams/${data.teamAId}`} className={styles.teamName}>
-            {teamALabel}
-          </Link>
+          <TeamTooltip teamId={data.teamAId} teamName={data.teamAName}>
+            <Link to={`/teams/${data.teamAId}`} className={styles.teamName}>
+              {teamALabel}
+            </Link>
+          </TeamTooltip>
           <div className={styles.score}>
             {data.teamAScoreAfter ?? '—'}
             <span className={styles.delta}>
@@ -55,9 +59,11 @@ export function MatchDetailPage() {
         </div>
         <span className={styles.vs}>VS</span>
         <div className={`${styles.team} ${data.winnerTeamId === data.teamBId ? styles.winner : ''}`}>
-          <Link to={`/teams/${data.teamBId}`} className={styles.teamName}>
-            {teamBLabel}
-          </Link>
+          <TeamTooltip teamId={data.teamBId} teamName={data.teamBName}>
+            <Link to={`/teams/${data.teamBId}`} className={styles.teamName}>
+              {teamBLabel}
+            </Link>
+          </TeamTooltip>
           <div className={styles.score}>
             {data.teamBScoreAfter ?? '—'}
             <span className={styles.delta}>
@@ -81,10 +87,12 @@ export function MatchDetailPage() {
               {teamAParticipants.map((p) => (
                 <tr key={p.playerId} className={p.isWinner ? styles.winRow : styles.lossRow}>
                   <td className={styles.idCell}>
-                    <Link to={`/players/${p.playerServer ?? 'unknown'}/${p.playerId}`}>
-                      <img src={getClassIcon(p.playerCls)} alt={getClassName(p.playerCls)} className={styles.classIcon} />
-                      {formatPlayerName(p.playerId, p.playerName)}
-                    </Link>
+                    <PlayerTooltip playerId={p.playerId} server={p.playerServer ?? 'unknown'} cls={p.playerCls} name={p.playerName}>
+                      <Link to={`/players/${p.playerServer ?? 'unknown'}/${p.playerId}`}>
+                        <img src={getClassIcon(p.playerCls)} alt={getClassName(p.playerCls)} className={styles.classIcon} />
+                        {formatPlayerName(p.playerId, p.playerName)}
+                      </Link>
+                    </PlayerTooltip>
                   </td>
                   <td>{formatScoreDelta(p.scoreBefore, p.scoreAfter)}</td>
                 </tr>
@@ -105,10 +113,12 @@ export function MatchDetailPage() {
               {teamBParticipants.map((p) => (
                 <tr key={p.playerId} className={p.isWinner ? styles.winRow : styles.lossRow}>
                   <td className={styles.idCell}>
-                    <Link to={`/players/${p.playerServer ?? 'unknown'}/${p.playerId}`}>
-                      <img src={getClassIcon(p.playerCls)} alt={getClassName(p.playerCls)} className={styles.classIcon} />
-                      {formatPlayerName(p.playerId, p.playerName)}
-                    </Link>
+                    <PlayerTooltip playerId={p.playerId} server={p.playerServer ?? 'unknown'} cls={p.playerCls} name={p.playerName}>
+                      <Link to={`/players/${p.playerServer ?? 'unknown'}/${p.playerId}`}>
+                        <img src={getClassIcon(p.playerCls)} alt={getClassName(p.playerCls)} className={styles.classIcon} />
+                        {formatPlayerName(p.playerId, p.playerName)}
+                      </Link>
+                    </PlayerTooltip>
                   </td>
                   <td>{formatScoreDelta(p.scoreBefore, p.scoreAfter)}</td>
                 </tr>

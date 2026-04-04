@@ -19,7 +19,7 @@ export function ScoreChart({ data, memberCount }: ScoreChartProps) {
 
     // Каждая запись — отдельная точка, данные разворачиваем (старые первые)
     return [...data].reverse().map((item, index) => {
-      const score = Math.round(item.score / divisor)
+      const score = Math.trunc(item.score / divisor)
       return {
         index,
         date: formatDate(item.recordedAt),

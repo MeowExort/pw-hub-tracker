@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { getPlayerById } from '@/shared/api/players'
@@ -9,8 +10,8 @@ import styles from './PlayerTooltip.module.scss'
 interface PlayerTooltipProps {
   playerId: number
   server: string
-  cls: number
-  name: string | null
+  cls?: number | null
+  name?: string | null
   isCaptain?: boolean
   children: React.ReactNode
 }
@@ -59,6 +60,16 @@ export function PlayerTooltip({ playerId, server, cls, name, isCaptain, children
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const tooltipRef = useRef<HTMLAnchorElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+
+  const updatePosition = useCallback(() => {
+    if (!wrapperRef.current) return
+    const rect = wrapperRef.current.getBoundingClientRect()
+    setPos({
+      top: rect.bottom + window.scrollY + 8,
+      left: rect.left + rect.width / 2 + window.scrollX,
+    })
+  }, [])
 
   const { data: player, isLoading } = useQuery({
     queryKey: ['player-tooltip', server, playerId],
@@ -88,22 +99,29 @@ export function PlayerTooltip({ playerId, server, cls, name, isCaptain, children
     }
   }, [])
 
+  useEffect(() => {
+    if (visible) {
+      updatePosition()
+    }
+  }, [visible, updatePosition])
+
   // Adjust tooltip position to stay in viewport
   useEffect(() => {
-    if (visible && tooltipRef.current) {
+    if (visible && tooltipRef.current && pos) {
       const rect = tooltipRef.current.getBoundingClientRect()
       if (rect.right > window.innerWidth) {
         tooltipRef.current.style.left = 'auto'
-        tooltipRef.current.style.right = '0'
+        tooltipRef.current.style.right = `${window.innerWidth - (pos.left + window.scrollX)}px`
       }
       if (rect.bottom > window.innerHeight) {
-        tooltipRef.current.style.top = 'auto'
-        tooltipRef.current.style.bottom = '100%'
-        tooltipRef.current.style.marginBottom = '8px'
-        tooltipRef.current.style.marginTop = '0'
+        const wrapperRect = wrapperRef.current?.getBoundingClientRect()
+        if (wrapperRect) {
+          tooltipRef.current.style.top = `${wrapperRect.top + window.scrollY - 8}px`
+          tooltipRef.current.style.transform = 'translateX(-50%) translateY(-100%)'
+        }
       }
     }
-  }, [visible, player])
+  }, [visible, player, pos])
 
   const orderStat = player?.battleStats?.find((s) => s.matchPattern === 0)
   const chaosStat = player?.battleStats?.find((s) => s.matchPattern === 1)
@@ -116,11 +134,12 @@ export function PlayerTooltip({ playerId, server, cls, name, isCaptain, children
       onMouseLeave={handleLeave}
     >
       {children}
-      {visible && (
+      {visible && pos && createPortal(
         <Link
           to={`/players/${server}/${playerId}`}
           className={styles.tooltip}
           ref={tooltipRef}
+          style={{ position: 'absolute', top: pos.top, left: pos.left, transform: 'translateX(-50%)' }}
           onMouseEnter={handleEnter}
           onMouseLeave={handleLeave}
           onClick={(e) => e.stopPropagation()}
@@ -131,13 +150,13 @@ export function PlayerTooltip({ playerId, server, cls, name, isCaptain, children
           {player && (
             <>
               <div className={styles.header}>
-                <img src={getClassIcon(cls)} alt={getClassName(cls)} className={styles.classIcon} />
+                <img src={getClassIcon(cls ?? player.cls)} alt={getClassName(cls ?? player.cls)} className={styles.classIcon} />
                 <div className={styles.headerInfo}>
                   <span className={styles.playerName}>
                     {name ?? player.name ?? `#${playerId}`}
                     {isCaptain && <span className={styles.captainBadge}> 👑</span>}
                   </span>
-                  <span className={styles.className}>{getClassName(cls)}</span>
+                  <span className={styles.className}>{getClassName(cls ?? player.cls)}</span>
                   {player.teamName && (
                     <span className={styles.teamName}>Команда: {player.teamName}</span>
                   )}
@@ -188,7 +207,8 @@ export function PlayerTooltip({ playerId, server, cls, name, isCaptain, children
               )}
             </>
           )}
-        </Link>
+        </Link>,
+        document.body,
       )}
     </div>
   )

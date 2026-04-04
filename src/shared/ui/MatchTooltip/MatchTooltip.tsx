@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { getMatchById } from '@/shared/api/matches'
@@ -31,6 +32,16 @@ export function MatchTooltip({ matchId, children }: MatchTooltipProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const tooltipRef = useRef<HTMLAnchorElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+
+  const updatePosition = useCallback(() => {
+    if (!wrapperRef.current) return
+    const rect = wrapperRef.current.getBoundingClientRect()
+    setPos({
+      top: rect.bottom + window.scrollY + 8,
+      left: rect.left + rect.width / 2 + window.scrollX,
+    })
+  }, [])
 
   const { data: match, isLoading } = useQuery({
     queryKey: ['match-tooltip', matchId],
@@ -61,20 +72,27 @@ export function MatchTooltip({ matchId, children }: MatchTooltipProps) {
   }, [])
 
   useEffect(() => {
-    if (visible && tooltipRef.current) {
+    if (visible) {
+      updatePosition()
+    }
+  }, [visible, updatePosition])
+
+  useEffect(() => {
+    if (visible && tooltipRef.current && pos) {
       const rect = tooltipRef.current.getBoundingClientRect()
       if (rect.right > window.innerWidth) {
         tooltipRef.current.style.left = 'auto'
-        tooltipRef.current.style.right = '0'
+        tooltipRef.current.style.right = `${window.innerWidth - (pos.left + window.scrollX)}px`
       }
       if (rect.bottom > window.innerHeight) {
-        tooltipRef.current.style.top = 'auto'
-        tooltipRef.current.style.bottom = '100%'
-        tooltipRef.current.style.marginBottom = '8px'
-        tooltipRef.current.style.marginTop = '0'
+        const wrapperRect = wrapperRef.current?.getBoundingClientRect()
+        if (wrapperRect) {
+          tooltipRef.current.style.top = `${wrapperRect.top + window.scrollY - 8}px`
+          tooltipRef.current.style.transform = 'translateX(-50%) translateY(-100%)'
+        }
       }
     }
-  }, [visible, match])
+  }, [visible, match, pos])
 
   const teamAParticipants = match?.participants?.filter((p) => p.teamId === match.teamAId) ?? []
   const teamBParticipants = match?.participants?.filter((p) => p.teamId === match.teamBId) ?? []
@@ -90,11 +108,12 @@ export function MatchTooltip({ matchId, children }: MatchTooltipProps) {
       onMouseLeave={handleLeave}
     >
       {children}
-      {visible && (
+      {visible && pos && createPortal(
         <Link
           to={`/matches/${matchId}`}
           className={styles.tooltip}
           ref={tooltipRef}
+          style={{ position: 'absolute', top: pos.top, left: pos.left, transform: 'translateX(-50%)' }}
           onMouseEnter={handleEnter}
           onMouseLeave={handleLeave}
           onClick={(e) => e.stopPropagation()}
@@ -166,7 +185,8 @@ export function MatchTooltip({ matchId, children }: MatchTooltipProps) {
               )}
             </>
           )}
-        </Link>
+        </Link>,
+        document.body,
       )}
     </div>
   )
