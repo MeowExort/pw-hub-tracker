@@ -14,6 +14,8 @@ import styles from './MembersSection.module.scss'
 type ViewMode = 'cards' | 'table'
 type SortKey = 'name' | 'rating' | 'winrate' | 'battles'
 
+const VIEW_STORAGE_KEY = 'membersSection_viewMode'
+
 interface Props {
   members: TeamMember[]
   captainId?: number
@@ -70,7 +72,16 @@ function WinRateBar({ wins, total }: { wins: number; total: number }) {
 
 /** Секция участников команды */
 export function MembersSection({ members, captainId }: Props) {
-  const [viewMode, setViewMode] = useState<ViewMode>('cards')
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const stored = localStorage.getItem(VIEW_STORAGE_KEY)
+    return stored === 'cards' || stored === 'table' ? stored : 'cards'
+  })
+
+  const handleViewChange = (mode: ViewMode) => {
+    setViewMode(mode)
+    localStorage.setItem(VIEW_STORAGE_KEY, mode)
+  }
+
   const [sortKey, setSortKey] = useState<SortKey>('rating')
 
   const sorted = useMemo(() => {
@@ -107,14 +118,14 @@ export function MembersSection({ members, captainId }: Props) {
           <div className={styles.viewToggle}>
             <button
               className={`${styles.toggleBtn} ${viewMode === 'cards' ? styles.active : ''}`}
-              onClick={() => setViewMode('cards')}
+              onClick={() => handleViewChange('cards')}
               title="Карточки"
             >
               ▦
             </button>
             <button
               className={`${styles.toggleBtn} ${viewMode === 'table' ? styles.active : ''}`}
-              onClick={() => setViewMode('table')}
+              onClick={() => handleViewChange('table')}
               title="Таблица"
             >
               ☰

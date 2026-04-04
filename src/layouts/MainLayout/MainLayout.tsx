@@ -48,25 +48,25 @@ export function MainLayout() {
                                     to="/analytics/classes"
                                     className={({isActive}) => `${styles.link} ${isActive ? styles.active : ''}`}
                                 >
-                                    Классы
+                                    Аналитика - Классы
                                 </NavLink>
                                 <NavLink
                                     to="/analytics/players"
                                     className={({isActive}) => `${styles.link} ${isActive ? styles.active : ''}`}
                                 >
-                                    Игроки
+                                    Аналитика - Игроки
                                 </NavLink>
                                 <NavLink
                                     to="/analytics/time"
                                     className={({isActive}) => `${styles.link} ${isActive ? styles.active : ''}`}
                                 >
-                                    Время
+                                    Аналитика - Время
                                 </NavLink>
                                 <NavLink
                                     to="/analytics/servers"
                                     className={({isActive}) => `${styles.link} ${isActive ? styles.active : ''}`}
                                 >
-                                    Серверы
+                                    Аналитика - Серверы
                                 </NavLink>
                             </>
                         }
