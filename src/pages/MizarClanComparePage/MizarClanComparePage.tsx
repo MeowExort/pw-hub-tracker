@@ -212,7 +212,8 @@ function PlayersTable({
 
   /** Данные для инфографики распределения: разбиваем отсортированный список на сегменты */
   const distributionData = useMemo(() => {
-    const total = allPlayers.length
+    const activePlayers = allPlayers.filter((p) => !exclusion.isExcluded(p.playerId))
+    const total = activePlayers.length
     if (total === 0) return []
     const segmentCount = Math.min(10, total)
     const segmentSize = Math.ceil(total / segmentCount)
@@ -220,7 +221,7 @@ function PlayersTable({
     for (let i = 0; i < segmentCount; i++) {
       const start = i * segmentSize
       const end = Math.min(start + segmentSize, total)
-      const slice = allPlayers.slice(start, end)
+      const slice = activePlayers.slice(start, end)
       const voidBornCount = slice.filter((p) => p.clan === 'VoidBorn').length
       const improveCount = slice.filter((p) => p.clan === 'Improve').length
       const pctStart = Math.round((start / total) * 100)
@@ -233,7 +234,7 @@ function PlayersTable({
       })
     }
     return segments
-  }, [allPlayers])
+  }, [allPlayers, exclusion])
 
   if (voidBornPlayers.length === 0 && improvePlayers.length === 0) {
     return <p className={styles.empty}>Нет данных</p>
