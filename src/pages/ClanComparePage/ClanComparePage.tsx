@@ -2,11 +2,12 @@ import { useMemo, useState, useRef, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { getPlayerPropertiesByIds } from '@/shared/api/players'
-import type { PlayerProperty } from '@/shared/types/api'
+import type { PlayerDetailProperties } from '@/shared/types/api'
 import { Spinner } from '@/shared/ui/Spinner'
 import { ErrorMessage } from '@/shared/ui/ErrorMessage'
 import { formatPlayerName, getClassName, getClassIcon } from '@/shared/utils/format'
 import { PlayerTooltip } from '@/shared/ui/PlayerTooltip'
+import { BuffIndicator } from '@/shared/ui/BuffIndicator'
 import { AURA_IDS, ETERNALS_IDS } from './clans'
 import styles from './ClanComparePage.module.scss'
 
@@ -38,10 +39,10 @@ const STAT_LABELS: Record<string, string> = {
 }
 
 /** Ключи характеристик для сравнения */
-const COMPARE_KEYS: (keyof PlayerProperty)[] = ['attackDegree', 'defendDegree', 'vigour', 'peakGrade']
+const COMPARE_KEYS: (keyof PlayerDetailProperties)[] = ['attackDegree', 'defendDegree', 'vigour', 'peakGrade']
 
 /** Вычислить сумму значений характеристики */
-function calcSum(players: PlayerProperty[], key: keyof PlayerProperty): number {
+function calcSum(players: PlayerDetailProperties[], key: keyof PlayerDetailProperties): number {
   return players.reduce((acc, p) => acc + Number(p[key] ?? 0), 0)
 }
 
@@ -108,13 +109,13 @@ export function ClanComparePage() {
   )
 }
 
-type TaggedPlayer = PlayerProperty & { clan: 'Aura' | 'Eternals' }
+type TaggedPlayer = PlayerDetailProperties & { clan: 'Aura' | 'Eternals' }
 
 type SortKey = 'playerId' | 'clan' | 'playerCls' | 'hp' | 'damageTop' | 'attackDegree' | 'defendDegree' | 'vigour' | 'peakGrade' | 'critRate'
 type SortDir = 'asc' | 'desc'
 
 /** Получить верхнюю планку урона для сортировки */
-function getDamageTop(p: PlayerProperty): number {
+function getDamageTop(p: PlayerDetailProperties): number {
   return Math.max(p.damageHigh, p.damageMagicHigh)
 }
 
@@ -123,7 +124,7 @@ function getSortValue(p: TaggedPlayer, key: SortKey): number | string {
   if (key === 'damageTop') return getDamageTop(p)
   if (key === 'clan') return p.clan
   if (key === 'playerCls') return getClassName(p.playerCls ?? -1)
-  return Number(p[key as keyof PlayerProperty] ?? 0)
+  return Number(p[key as keyof PlayerDetailProperties] ?? 0)
 }
 
 /** Объединённая таблица игроков обоих кланов */
@@ -131,8 +132,8 @@ function PlayersTable({
   auraPlayers,
   eternalsPlayers,
 }: {
-  auraPlayers: PlayerProperty[]
-  eternalsPlayers: PlayerProperty[]
+  auraPlayers: PlayerDetailProperties[]
+  eternalsPlayers: PlayerDetailProperties[]
 }) {
   const auraSet = useMemo(() => new Set(AURA_IDS), [])
   const [sortKey, setSortKey] = useState<SortKey>('attackDegree')
@@ -164,7 +165,7 @@ function PlayersTable({
       const maxVal = range.max !== '' ? Number(range.max) : null
       if (minVal !== null || maxVal !== null) {
         filtered = filtered.filter((p) => {
-          const v = key === 'damageTop' ? getDamageTop(p) : Number(p[key as keyof PlayerProperty] ?? 0)
+          const v = key === 'damageTop' ? getDamageTop(p) : Number(p[key as keyof PlayerDetailProperties] ?? 0)
           if (minVal !== null && v < minVal) return false
           if (maxVal !== null && v > maxVal) return false
           return true
@@ -482,17 +483,19 @@ function PlayersTable({
                   {p.clan}
                 </span>
               </td>
-              <td>{p.hp.toLocaleString('ru-RU')}</td>
+              <td><BuffIndicator buffs={p.hpBuffs}>{p.hp.toLocaleString('ru-RU')}</BuffIndicator></td>
               <td>
-                {p.damageHigh > p.damageMagicHigh ? p.damageLow.toLocaleString('ru-RU') : p.damageMagicLow.toLocaleString('ru-RU')}
-                -
-                {p.damageHigh > p.damageMagicHigh ? p.damageHigh.toLocaleString('ru-RU') : p.damageMagicHigh.toLocaleString('ru-RU')}
+                <BuffIndicator buffs={p.damageHigh > p.damageMagicHigh ? p.damageHighBuffs : p.damageMagicHighBuffs}>
+                  {p.damageHigh > p.damageMagicHigh ? p.damageLow.toLocaleString('ru-RU') : p.damageMagicLow.toLocaleString('ru-RU')}
+                  -
+                  {p.damageHigh > p.damageMagicHigh ? p.damageHigh.toLocaleString('ru-RU') : p.damageMagicHigh.toLocaleString('ru-RU')}
+                </BuffIndicator>
               </td>
-              <td>{p.attackDegree.toLocaleString('ru-RU')}</td>
-              <td>{p.defendDegree.toLocaleString('ru-RU')}</td>
-              <td>{p.vigour.toLocaleString('ru-RU')}</td>
-              <td>{p.peakGrade}</td>
-              <td>{p.critRate}</td>
+              <td><BuffIndicator buffs={p.attackDegreeBuffs}>{p.attackDegree.toLocaleString('ru-RU')}</BuffIndicator></td>
+              <td><BuffIndicator buffs={p.defendDegreeBuffs}>{p.defendDegree.toLocaleString('ru-RU')}</BuffIndicator></td>
+              <td><BuffIndicator buffs={p.vigourBuffs}>{p.vigour.toLocaleString('ru-RU')}</BuffIndicator></td>
+              <td><BuffIndicator buffs={p.peakGradeBuffs}>{p.peakGrade}</BuffIndicator></td>
+              <td><BuffIndicator buffs={p.critRateBuffs}>{p.critRate}</BuffIndicator></td>
             </tr>
           ))}
         </tbody>

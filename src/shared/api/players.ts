@@ -2,10 +2,10 @@ import { apiGet, apiPost } from './client'
 import type {
   PaginatedResponse,
   PlayerDetail,
+  PlayerDetailProperties,
   PlayerListItem,
   PlayerMatchItem,
   PlayerMaxProperties,
-  PlayerProperty,
   ScoreHistoryItem,
 } from '@/shared/types/api'
 
@@ -102,5 +102,5 @@ export function getPlayerPropertiesMax() {
 
 /** Получить характеристики игроков по массиву ID */
 export function getPlayerPropertiesByIds(players: { Id: number; Server: string }[]) {
-  return apiPost<PlayerProperty[]>('/api/players/properties/by-ids', players)
+  return apiPost<PlayerDetailProperties[]>('/api/players/properties/by-ids', players)
 }

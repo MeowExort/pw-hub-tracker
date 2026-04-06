@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { getPlayerById } from '@/shared/api/players'
 import type { BattleStat } from '@/shared/types/api'
 import { getClassIcon, getClassName, formatTimestamp } from '@/shared/utils/format'
+import { BuffIndicator } from '@/shared/ui/BuffIndicator'
 import styles from './PlayerTooltip.module.scss'
 
 interface PlayerTooltipProps {
@@ -176,28 +177,28 @@ export function PlayerTooltip({ playerId, server, cls, name, isCaptain, children
               {player.properties && (
                 <div className={styles.props}>
                   <div className={styles.propsRow}>
-                    <span>❤️ {player.properties.hp.toLocaleString()}</span>
-                    <span>💧 {player.properties.mp.toLocaleString()}</span>
+                    <span>❤️ <BuffIndicator buffs={player.properties.hpBuffs}>{player.properties.hp.toLocaleString()}</BuffIndicator></span>
+                    <span>💧 <BuffIndicator buffs={player.properties.mpBuffs}>{player.properties.mp.toLocaleString()}</BuffIndicator></span>
                   </div>
                   <div className={styles.propsRow}>
-                    <span>⚔ {player.properties.damageLow}–{player.properties.damageHigh}</span>
-                    <span>🔮 {player.properties.damageMagicLow}–{player.properties.damageMagicHigh}</span>
+                    <span>⚔ <BuffIndicator buffs={player.properties.damageLowBuffs}>{player.properties.damageLow}–{player.properties.damageHigh}</BuffIndicator></span>
+                    <span>🔮 <BuffIndicator buffs={player.properties.damageMagicLowBuffs}>{player.properties.damageMagicLow}–{player.properties.damageMagicHigh}</BuffIndicator></span>
                   </div>
                   <div className={styles.propsRow}>
-                    <span>🛡 Физ: {player.properties.defense.toLocaleString()}</span>
-                    <span>🛡 Маг: {(player.properties.resistance?.[0] ?? 0).toLocaleString()}</span>
+                    <span>🛡 Физ: <BuffIndicator buffs={player.properties.defenseBuffs}>{player.properties.defense.toLocaleString()}</BuffIndicator></span>
+                    <span>🛡 Маг: <BuffIndicator buffs={player.properties.resistanceBuffs}>{(player.properties.resistance?.[0] ?? 0).toLocaleString()}</BuffIndicator></span>
                   </div>
                   <div className={styles.propsRow}>
-                    <span>⚔️ ПА: {player.properties.attackDegree.toLocaleString()}</span>
-                    <span>🛡️ ПЗ: {player.properties.defendDegree.toLocaleString()}</span>
+                    <span>⚔️ ПА: <BuffIndicator buffs={player.properties.attackDegreeBuffs}>{player.properties.attackDegree.toLocaleString()}</BuffIndicator></span>
+                    <span>🛡️ ПЗ: <BuffIndicator buffs={player.properties.defendDegreeBuffs}>{player.properties.defendDegree.toLocaleString()}</BuffIndicator></span>
                   </div>
                   <div className={styles.propsRow}>
-                    <span>💥 Физ.пробив: {player.properties.antiDefenseDegree.toLocaleString()}</span>
-                    <span>✨ Маг.пробив: {player.properties.antiResistanceDegree.toLocaleString()}</span>
+                    <span>💥 Физ.пробив: <BuffIndicator buffs={player.properties.antiDefenseDegreeBuffs}>{player.properties.antiDefenseDegree.toLocaleString()}</BuffIndicator></span>
+                    <span>✨ Маг.пробив: <BuffIndicator buffs={player.properties.antiResistanceDegreeBuffs}>{player.properties.antiResistanceDegree.toLocaleString()}</BuffIndicator></span>
                   </div>
                   <div className={styles.propsRow}>
-                    <span>🗡️ БУ: {player.properties.peakGrade.toLocaleString()}</span>
-                    <span>🏰 БД: {player.properties.vigour.toLocaleString()}</span>
+                    <span>🗡️ БУ: <BuffIndicator buffs={player.properties.peakGradeBuffs}>{player.properties.peakGrade.toLocaleString()}</BuffIndicator></span>
+                    <span>🏰 БД: <BuffIndicator buffs={player.properties.vigourBuffs}>{player.properties.vigour.toLocaleString()}</BuffIndicator></span>
                   </div>
                 </div>
               )}

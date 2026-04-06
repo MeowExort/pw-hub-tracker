@@ -12,6 +12,7 @@ import { Pagination } from '@/shared/ui/Pagination'
 import { getClassName, getClassIcon, formatDateTime } from '@/shared/utils/format'
 import { PlayerTooltip } from '@/shared/ui/PlayerTooltip'
 import { TeamTooltip } from '@/shared/ui/TeamTooltip'
+import { BuffIndicator } from '@/shared/ui/BuffIndicator'
 import styles from './PlayersPage.module.scss'
 
 const PAGE_SIZE = 20
@@ -338,13 +339,13 @@ function PlayerRow({ player, rank }: { player: PlayerListItem; rank: number }) {
       </td>
       {p ? (
         <>
-          <td className={styles.numCell}>{p.hp.toLocaleString()}</td>
-          <td className={styles.numCell}>{formatDamageRange(p.damageLow, p.damageHigh)}</td>
-          <td className={styles.numCell}>{formatDamageRange(p.damageMagicLow, p.damageMagicHigh)}</td>
-          <td className={styles.numCell}>{p.attackDegree}</td>
-          <td className={styles.numCell}>{p.defendDegree}</td>
-          <td className={styles.numCell}>{p.vigour}</td>
-          <td className={styles.numCell}>{p.peakGrade}</td>
+          <td className={styles.numCell}><BuffIndicator buffs={p.hpBuffs}>{p.hp.toLocaleString()}</BuffIndicator></td>
+          <td className={styles.numCell}><BuffIndicator buffs={[...(p.damageLowBuffs ?? []), ...(p.damageHighBuffs ?? [])].filter((b, i, a) => a.findIndex(x => x.id === b.id) === i)}>{formatDamageRange(p.damageLow, p.damageHigh)}</BuffIndicator></td>
+          <td className={styles.numCell}><BuffIndicator buffs={[...(p.damageMagicLowBuffs ?? []), ...(p.damageMagicHighBuffs ?? [])].filter((b, i, a) => a.findIndex(x => x.id === b.id) === i)}>{formatDamageRange(p.damageMagicLow, p.damageMagicHigh)}</BuffIndicator></td>
+          <td className={styles.numCell}><BuffIndicator buffs={p.attackDegreeBuffs}>{p.attackDegree}</BuffIndicator></td>
+          <td className={styles.numCell}><BuffIndicator buffs={p.defendDegreeBuffs}>{p.defendDegree}</BuffIndicator></td>
+          <td className={styles.numCell}><BuffIndicator buffs={p.vigourBuffs}>{p.vigour}</BuffIndicator></td>
+          <td className={styles.numCell}><BuffIndicator buffs={p.peakGradeBuffs}>{p.peakGrade}</BuffIndicator></td>
         </>
       ) : (
         <td colSpan={6} className={styles.noData}>Нет данных</td>
@@ -396,12 +397,12 @@ function PlayerCard({ player, rank, maxProps }: { player: PlayerListItem; rank: 
             <HexRadar axes={buildRadarAxes(p, maxProps)} size={160} />
           ) : (
             <>
-              <StatBadge label="HP" value={p.hp.toLocaleString()} />
-              <StatBadge label="Физ." value={formatDamageRange(p.damageLow, p.damageHigh)} />
-              <StatBadge label="Маг." value={formatDamageRange(p.damageMagicLow, p.damageMagicHigh)} />
-              <StatBadge label="ПА" value={String(p.attackDegree)} />
-              <StatBadge label="ПЗ" value={String(p.defendDegree)} />
-              <StatBadge label="БД" value={String(p.vigour)} />
+              <StatBadge label="HP" value={p.hp.toLocaleString()} buffs={p.hpBuffs} />
+              <StatBadge label="Физ." value={formatDamageRange(p.damageLow, p.damageHigh)} buffs={[...(p.damageLowBuffs ?? []), ...(p.damageHighBuffs ?? [])].filter((b, i, a) => a.findIndex(x => x.id === b.id) === i)} />
+              <StatBadge label="Маг." value={formatDamageRange(p.damageMagicLow, p.damageMagicHigh)} buffs={[...(p.damageMagicLowBuffs ?? []), ...(p.damageMagicHighBuffs ?? [])].filter((b, i, a) => a.findIndex(x => x.id === b.id) === i)} />
+              <StatBadge label="ПА" value={String(p.attackDegree)} buffs={p.attackDegreeBuffs} />
+              <StatBadge label="ПЗ" value={String(p.defendDegree)} buffs={p.defendDegreeBuffs} />
+              <StatBadge label="БД" value={String(p.vigour)} buffs={p.vigourBuffs} />
             </>
           )}
           <div className={styles.cardDate}>Обновлено: {formatDateTime(p.updatedAt)}</div>
@@ -414,11 +415,11 @@ function PlayerCard({ player, rank, maxProps }: { player: PlayerListItem; rank: 
 }
 
 /** Бейдж характеристики в карточке */
-function StatBadge({ label, value }: { label: string; value: string }) {
+function StatBadge({ label, value, buffs }: { label: string; value: string; buffs?: import('@/shared/types/api').BuffDto[] }) {
   return (
     <div className={styles.statBadge}>
       <span className={styles.statLabel}>{label}</span>
-      <span className={styles.statValue}>{value}</span>
+      <span className={styles.statValue}><BuffIndicator buffs={buffs}>{value}</BuffIndicator></span>
     </div>
   )
 }

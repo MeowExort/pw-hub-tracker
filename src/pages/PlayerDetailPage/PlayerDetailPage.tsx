@@ -17,6 +17,7 @@ import {
   formatPlayerName,
 } from '@/shared/utils/format'
 import { ScoreChart } from '../TeamDetailPage/ScoreChart'
+import { BuffIndicator } from '@/shared/ui/BuffIndicator'
 import styles from './PlayerDetailPage.module.scss'
 
 const PAGE_SIZE = 20
@@ -88,31 +89,31 @@ export function PlayerDetailPage() {
           <div className={styles.sideProps}>
             <div className={styles.sideSectionLabel}>Характеристики</div>
             <div className={styles.sidePropsVitals}>
-              <span className={styles.propsHp}>❤️ {props.hp.toLocaleString()}</span>
-              <span className={styles.propsMp}>💧 {props.mp.toLocaleString()}</span>
+              <span className={styles.propsHp}>❤️ <BuffIndicator buffs={props.hpBuffs}>{props.hp.toLocaleString()}</BuffIndicator></span>
+              <span className={styles.propsMp}>💧 <BuffIndicator buffs={props.mpBuffs}>{props.mp.toLocaleString()}</BuffIndicator></span>
             </div>
             <div className={styles.sidePropsList}>
 
-              <div className={styles.propRow}><span className={styles.propLabel}>ПА</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.attackDegree}</span></div>
-              <div className={styles.propRow}><span className={styles.propLabel}>ПЗ</span><span className={`${styles.propValue} ${styles.defColor}`}>{props.defendDegree}</span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>ПА</span><span className={`${styles.propValue} ${styles.atkColor}`}><BuffIndicator buffs={props.attackDegreeBuffs}>{props.attackDegree}</BuffIndicator></span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>ПЗ</span><span className={`${styles.propValue} ${styles.defColor}`}><BuffIndicator buffs={props.defendDegreeBuffs}>{props.defendDegree}</BuffIndicator></span></div>
               <hr className={styles.propsDivider} />
-              <div className={styles.propRow}><span className={styles.propLabel}>Физ. атака</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.damageLow}–{props.damageHigh}</span></div>
-              <div className={styles.propRow}><span className={styles.propLabel}>Маг. атака</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.damageMagicLow}–{props.damageMagicHigh}</span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>Физ. атака</span><span className={`${styles.propValue} ${styles.atkColor}`}><BuffIndicator buffs={props.damageLowBuffs}>{props.damageLow}–{props.damageHigh}</BuffIndicator></span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>Маг. атака</span><span className={`${styles.propValue} ${styles.atkColor}`}><BuffIndicator buffs={props.damageMagicLowBuffs}>{props.damageMagicLow}–{props.damageMagicHigh}</BuffIndicator></span></div>
               <hr className={styles.propsDivider} />
-              <div className={styles.propRow}><span className={styles.propLabel}>БУ</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.peakGrade}</span></div>
-              <div className={styles.propRow}><span className={styles.propLabel}>БД</span><span className={styles.propValue}>{props.vigour}</span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>БУ</span><span className={`${styles.propValue} ${styles.atkColor}`}><BuffIndicator buffs={props.peakGradeBuffs}>{props.peakGrade}</BuffIndicator></span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>БД</span><span className={styles.propValue}><BuffIndicator buffs={props.vigourBuffs}>{props.vigour}</BuffIndicator></span></div>
               <hr className={styles.propsDivider} />
-              <div className={styles.propRow}><span className={styles.propLabel}>Физ. защита</span><span className={`${styles.propValue} ${styles.defColor}`}>{props.defense.toLocaleString()}</span></div>
-              <div className={styles.propRow}><span className={styles.propLabel}>Маг. защита</span><span className={`${styles.propValue} ${styles.defColor}`}>{props.resistance[0].toLocaleString()}</span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>Физ. защита</span><span className={`${styles.propValue} ${styles.defColor}`}><BuffIndicator buffs={props.defenseBuffs}>{props.defense.toLocaleString()}</BuffIndicator></span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>Маг. защита</span><span className={`${styles.propValue} ${styles.defColor}`}><BuffIndicator buffs={props.resistanceBuffs}>{props.resistance[0].toLocaleString()}</BuffIndicator></span></div>
               <hr className={styles.propsDivider} />
-              <div className={styles.propRow}><span className={styles.propLabel}>Физ. пробив</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.antiDefenseDegree}</span></div>
-              <div className={styles.propRow}><span className={styles.propLabel}>Маг. пробив</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.antiResistanceDegree}</span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>Физ. пробив</span><span className={`${styles.propValue} ${styles.atkColor}`}><BuffIndicator buffs={props.antiDefenseDegreeBuffs}>{props.antiDefenseDegree}</BuffIndicator></span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>Маг. пробив</span><span className={`${styles.propValue} ${styles.atkColor}`}><BuffIndicator buffs={props.antiResistanceDegreeBuffs}>{props.antiResistanceDegree}</BuffIndicator></span></div>
               <hr className={styles.propsDivider} />
-              <div className={styles.propRow}><span className={styles.propLabel}>Крит. урон</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.critDamageBonus.toLocaleString()}</span></div>
-              <div className={styles.propRow}><span className={styles.propLabel}>Крит. шанс</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.critRate.toLocaleString()}</span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>Крит. урон</span><span className={`${styles.propValue} ${styles.atkColor}`}><BuffIndicator buffs={props.critDamageBonusBuffs}>{props.critDamageBonus.toLocaleString()}</BuffIndicator></span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>Крит. шанс</span><span className={`${styles.propValue} ${styles.atkColor}`}><BuffIndicator buffs={props.critRateBuffs}>{props.critRate.toLocaleString()}</BuffIndicator></span></div>
               <hr className={styles.propsDivider} />
-              <div className={styles.propRow}><span className={styles.propLabel}>Меткость</span><span className={`${styles.propValue} ${styles.atkColor}`}>{props.attack}</span></div>
-              <div className={styles.propRow}><span className={styles.propLabel}>Уклонение</span><span className={`${styles.propValue} ${styles.defColor}`}>{props.armor}</span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>Меткость</span><span className={`${styles.propValue} ${styles.atkColor}`}><BuffIndicator buffs={props.attackBuffs}>{props.attack}</BuffIndicator></span></div>
+              <div className={styles.propRow}><span className={styles.propLabel}>Уклонение</span><span className={`${styles.propValue} ${styles.defColor}`}><BuffIndicator buffs={props.armorBuffs}>{props.armor}</BuffIndicator></span></div>
             </div>
           </div>
         )}

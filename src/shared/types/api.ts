@@ -155,6 +155,16 @@ export interface MatchDetail extends MatchListItem {
   participants: MatchParticipant[]
 }
 
+/** Свойства игрока в детальном ответе (формат PlayerMaxStatsDto с per-stat баффами) */
+export interface PlayerDetailProperties extends PlayerMaxProperties {
+  playerId: number
+  playerCls?: number | null
+  playerName?: string | null
+  server: string
+  resistance: number[]
+  updatedAt: string
+}
+
 /** Детали игрока */
 export interface PlayerDetail {
   id: number
@@ -169,7 +179,7 @@ export interface PlayerDetail {
   lastVisiteTimestamp: number
   updatedAt: string
   battleStats: BattleStat[]
-  properties?: PlayerProperty
+  properties?: PlayerDetailProperties
   scoreHistory?: ScoreHistoryItem[]
   team?: { id: number; name: string; zoneId: number }
 }
@@ -202,6 +212,14 @@ export interface ScoreHistoryItem {
   recordedAt: string
 }
 
+/** Бафф персонажа */
+export interface BuffDto {
+  id: number
+  name: string
+  description?: string | null
+  icon?: string | null
+}
+
 /** Свойства игрока (характеристики персонажа) */
 export interface PlayerProperty {
   playerId: number
@@ -232,6 +250,7 @@ export interface PlayerProperty {
   antiDefenseDegree: number
   antiResistanceDegree: number
   peakGrade: number
+  buffs: BuffDto[]
   updatedAt: string
 }
 
@@ -258,6 +277,19 @@ export interface PlayerListItem {
     antiDefenseDegree: number
     antiResistanceDegree: number
     peakGrade: number
+    hpBuffs: BuffDto[]
+    mpBuffs: BuffDto[]
+    damageLowBuffs: BuffDto[]
+    damageHighBuffs: BuffDto[]
+    damageMagicLowBuffs: BuffDto[]
+    damageMagicHighBuffs: BuffDto[]
+    defenseBuffs: BuffDto[]
+    attackDegreeBuffs: BuffDto[]
+    defendDegreeBuffs: BuffDto[]
+    vigourBuffs: BuffDto[]
+    antiDefenseDegreeBuffs: BuffDto[]
+    antiResistanceDegreeBuffs: BuffDto[]
+    peakGradeBuffs: BuffDto[]
     updatedAt: string
   } | null
 }
@@ -287,6 +319,30 @@ export interface PlayerMaxProperties {
   antiDefenseDegree: number
   antiResistanceDegree: number
   peakGrade: number
+  hpBuffs: BuffDto[]
+  mpBuffs: BuffDto[]
+  damageLowBuffs: BuffDto[]
+  damageHighBuffs: BuffDto[]
+  damageMagicLowBuffs: BuffDto[]
+  damageMagicHighBuffs: BuffDto[]
+  defenseBuffs: BuffDto[]
+  resistanceBuffs: BuffDto[]
+  attackBuffs: BuffDto[]
+  armorBuffs: BuffDto[]
+  attackSpeedBuffs: BuffDto[]
+  runSpeedBuffs: BuffDto[]
+  attackDegreeBuffs: BuffDto[]
+  defendDegreeBuffs: BuffDto[]
+  critRateBuffs: BuffDto[]
+  damageReduceBuffs: BuffDto[]
+  prayspeedBuffs: BuffDto[]
+  critDamageBonusBuffs: BuffDto[]
+  invisibleDegreeBuffs: BuffDto[]
+  antiInvisibleDegreeBuffs: BuffDto[]
+  vigourBuffs: BuffDto[]
+  antiDefenseDegreeBuffs: BuffDto[]
+  antiResistanceDegreeBuffs: BuffDto[]
+  peakGradeBuffs: BuffDto[]
 }
 
 /** Результат пересборки матчей */

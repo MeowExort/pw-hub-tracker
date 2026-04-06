@@ -16,7 +16,7 @@ import {
 import { PlayerTooltip } from '@/shared/ui/PlayerTooltip'
 import { TeamTooltip } from '@/shared/ui/TeamTooltip'
 import { MatchTooltip } from '@/shared/ui/MatchTooltip'
-import type { MatchParticipant, PlayerProperty } from '@/shared/types/api'
+import type { MatchParticipant, PlayerDetailProperties } from '@/shared/types/api'
 import styles from './MatchDetailPage.module.scss'
 
 /** Суммарные характеристики команды */
@@ -28,7 +28,7 @@ interface TeamStats {
 }
 
 /** Суммировать характеристики участников команды */
-function sumTeamStats(participants: MatchParticipant[], propsMap: Map<number, PlayerProperty>): TeamStats {
+function sumTeamStats(participants: MatchParticipant[], propsMap: Map<number, PlayerDetailProperties>): TeamStats {
   let attackDegree = 0, defendDegree = 0, vigour = 0, peakGrade = 0
   for (const p of participants) {
     const props = propsMap.get(p.playerId)
@@ -128,7 +128,7 @@ export function MatchDetailPage() {
   const teamBParticipants = data.participants.filter((p) => p.teamId === data.teamBId)
 
   // Карта характеристик
-  const propsMap = new Map<number, PlayerProperty>()
+  const propsMap = new Map<number, PlayerDetailProperties>()
   if (propsQuery.data) {
     for (const p of propsQuery.data) {
       propsMap.set(p.playerId, p)
