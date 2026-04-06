@@ -8,6 +8,8 @@ import { ErrorMessage } from '@/shared/ui/ErrorMessage'
 import { formatPlayerName, getClassName, getClassIcon } from '@/shared/utils/format'
 import { PlayerTooltip } from '@/shared/ui/PlayerTooltip'
 import { BuffIndicator } from '@/shared/ui/BuffIndicator'
+import { ToggleSwitch } from '@/shared/ui/ToggleSwitch'
+import { usePlayerExclusion } from '@/shared/hooks/usePlayerExclusion'
 import { VOIDBORN_IDS, IMPROVE_IDS } from './clans'
 import styles from './MizarClanComparePage.module.scss'
 
@@ -54,14 +56,17 @@ function fmt(value: number): string {
 
 /** Страница сравнения кланов VoidBorn и Improve */
 export function MizarClanComparePage() {
-  const allPlayers = useMemo(
-    () => [...VOIDBORN_IDS, ...IMPROVE_IDS].map((id) => ({ Id: id, Server: 'mizar' })),
-    [],
+  const allPlayerIds = useMemo(() => [...VOIDBORN_IDS, ...IMPROVE_IDS], [])
+  const allPlayersReq = useMemo(
+    () => allPlayerIds.map((id) => ({ Id: id, Server: 'mizar' })),
+    [allPlayerIds],
   )
+
+  const exclusion = usePlayerExclusion('mizar-clan-compare', allPlayerIds)
 
   const query = useQuery({
     queryKey: ['clanCompare', 'mizar', 'properties'],
-    queryFn: () => getPlayerPropertiesByIds(allPlayers),
+    queryFn: () => getPlayerPropertiesByIds(allPlayersReq),
   })
 
   const { voidBornPlayers, improvePlayers } = useMemo(() => {
@@ -91,20 +96,20 @@ export function MizarClanComparePage() {
         <div className={styles.clanCard}>
           <div className={`${styles.clanName} ${styles.voidBorn}`}>VoidBorn</div>
           <div className={styles.clanCount}>
-            {voidBornPlayers.length} игроков
+            {voidBornPlayers.filter(p => !exclusion.isExcluded(p.playerId)).length} / {voidBornPlayers.length} игроков
           </div>
         </div>
         <div className={styles.vs}>VS</div>
         <div className={styles.clanCard}>
           <div className={`${styles.clanName} ${styles.improve}`}>Improve</div>
           <div className={styles.clanCount}>
-            {improvePlayers.length} игроков
+            {improvePlayers.filter(p => !exclusion.isExcluded(p.playerId)).length} / {improvePlayers.length} игроков
           </div>
         </div>
       </div>
 
       {/* Таблица и суммарные характеристики */}
-      <PlayersTable voidBornPlayers={voidBornPlayers} improvePlayers={improvePlayers} />
+      <PlayersTable voidBornPlayers={voidBornPlayers} improvePlayers={improvePlayers} exclusion={exclusion} />
     </div>
   )
 }
@@ -127,15 +132,20 @@ function getSortValue(p: TaggedPlayer, key: SortKey): number | string {
   return Number(p[key as keyof PlayerDetailProperties] ?? 0)
 }
 
+type ExclusionApi = ReturnType<typeof usePlayerExclusion>
+
 /** Объединённая таблица игроков обоих кланов */
 function PlayersTable({
   voidBornPlayers,
   improvePlayers,
+  exclusion,
 }: {
   voidBornPlayers: PlayerDetailProperties[]
   improvePlayers: PlayerDetailProperties[]
+  exclusion: ExclusionApi
 }) {
   const voidBornSet = useMemo(() => new Set(VOIDBORN_IDS), [])
+  const [copied, setCopied] = useState(false)
   const [sortKey, setSortKey] = useState<SortKey>('attackDegree')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [clanFilter, setClanFilter] = useState<'all' | 'VoidBorn' | 'Improve'>('all')
@@ -197,8 +207,8 @@ function PlayersTable({
     return sortDir === 'asc' ? ' ↑' : ' ↓'
   }
 
-  const filteredVoidBorn = useMemo(() => allPlayers.filter((p) => p.clan === 'VoidBorn'), [allPlayers])
-  const filteredImprove = useMemo(() => allPlayers.filter((p) => p.clan === 'Improve'), [allPlayers])
+  const filteredVoidBorn = useMemo(() => allPlayers.filter((p) => p.clan === 'VoidBorn' && !exclusion.isExcluded(p.playerId)), [allPlayers, exclusion])
+  const filteredImprove = useMemo(() => allPlayers.filter((p) => p.clan === 'Improve' && !exclusion.isExcluded(p.playerId)), [allPlayers, exclusion])
 
   /** Данные для инфографики распределения: разбиваем отсортированный список на сегменты */
   const distributionData = useMemo(() => {
@@ -422,10 +432,23 @@ function PlayersTable({
       {/* Таблица игроков */}
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>Все игроки</h2>
+        <div className={styles.exclusionControls}>
+          <button className={styles.shareBtn} onClick={() => { navigator.clipboard.writeText(exclusion.getShareUrl()); setCopied(true); setTimeout(() => setCopied(false), 2000); }}>
+            {copied ? '✅ Ссылка скопирована!' : '📋 Поделиться'}
+          </button>
+          <button className={styles.toggleAllBtn} onClick={exclusion.includeAll}>Включить всех</button>
+          <button className={styles.toggleAllBtn} onClick={exclusion.excludeAll}>Исключить всех</button>
+        </div>
       </div>
       <table className={styles.table}>
         <thead>
           <tr>
+            <th>
+              <ToggleSwitch
+                checked={exclusion.activeCount === allPlayers.length}
+                onChange={() => exclusion.activeCount === allPlayers.length ? exclusion.excludeAll() : exclusion.includeAll()}
+              />
+            </th>
             <th>#</th>
             {columns.map((col) => (
               <th key={col.key} className={styles.sortable}>
@@ -457,13 +480,19 @@ function PlayersTable({
         <tbody>
           {allPlayers.length === 0 && (
             <tr>
-              <td colSpan={columns.length + 1} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+              <td colSpan={columns.length + 2} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
                 Нет игроков, соответствующих фильтрам
               </td>
             </tr>
           )}
           {allPlayers.map((p, i) => (
-            <tr key={p.playerId}>
+            <tr key={p.playerId} className={exclusion.isExcluded(p.playerId) ? styles.excludedRow : undefined} onClick={() => exclusion.togglePlayer(p.playerId)} style={{ cursor: 'pointer' }}>
+              <td onClick={(e) => e.stopPropagation()}>
+                <ToggleSwitch
+                  checked={!exclusion.isExcluded(p.playerId)}
+                  onChange={() => exclusion.togglePlayer(p.playerId)}
+                />
+              </td>
               <td>{i + 1}</td>
               <td>
                 <PlayerTooltip playerId={p.playerId} server={p.server} cls={p.playerCls} name={p.playerName}>

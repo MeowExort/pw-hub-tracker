@@ -1,3 +1,46 @@
+.exclusionControls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.shareBtn,
+.toggleAllBtn {
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  transition: background var(--transition-fast);
+
+  &:hover {
+    background: var(--bg-secondary);
+  }
+}
+
+.shareBtn {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.activeCount {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-left: var(--space-sm);
+}
+
+.excludedRow {
+  opacity: 0.4;
+}
+
 .page {
   display: flex;
   flex-direction: column;
