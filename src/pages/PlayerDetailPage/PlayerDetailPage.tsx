@@ -19,6 +19,7 @@ import {
 import { ScoreChart } from '../TeamDetailPage/ScoreChart'
 import { BuffIndicator } from '@/shared/ui/BuffIndicator'
 import styles from './PlayerDetailPage.module.scss'
+import alkorBg from '../../../assets/custom_bg/alkor_737617.png'
 
 const PAGE_SIZE = 20
 
@@ -57,7 +58,10 @@ export function PlayerDetailPage() {
   const playerTeamName = player.team?.name ?? player.teamName
 
   return (
-    <div className={styles.layout}>
+    <div
+      className={`${styles.layout} ${player.id === 737617 ? styles.customBg : ''}`}
+      style={player.id === 737617 ? { '--custom-bg': `url(${alkorBg})` } as React.CSSProperties : undefined}
+    >
       {/* ===== SIDEBAR ===== */}
       <aside className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
