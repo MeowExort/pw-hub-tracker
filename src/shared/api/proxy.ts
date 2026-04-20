@@ -1,0 +1,169 @@
+/**
+ * Прокси-клиент для BFF.
+ * Все запросы идут через единый `POST /api/proxy` с подписью, PoW, fingerprint
+ * и обфусцированным идентификатором действия. Реальный путь API не попадает
+ * в сетевую вкладку браузера.
+ */
+
+import { createSignedRequest } from '@/shared/security/signing'
+import { getRateLimiter } from '@/shared/security/rate-limiter'
+import { requestCaptcha, consumeCaptchaToken } from '@/shared/security/captcha'
+import { solveChallenge } from '@/shared/security/pow'
+import { getFingerprint } from '@/shared/security/fingerprint'
+import { resolveRoute } from '@/shared/security/actions'
+
+/** Ошибка API с HTTP-статусом */
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
+/** Превышен лимит запросов */
+export class RateLimitError extends Error {
+  public retryAfterMs: number
+  constructor(retryAfterMs: number) {
+    super(`Превышен лимит запросов. Повторите через ${Math.ceil(retryAfterMs / 1000)} сек.`)
+    this.name = 'RateLimitError'
+    this.retryAfterMs = retryAfterMs
+  }
+}
+
+/** Сервер требует пройти CAPTCHA */
+export class CaptchaRequiredError extends Error {
+  constructor() {
+    super('Требуется прохождение CAPTCHA')
+    this.name = 'CaptchaRequiredError'
+  }
+}
+
+/** Ответ эндпоинта `GET /api/pow-challenge`. */
+interface PowChallengeResponse {
+  challenge: string
+  difficulty: number
+}
+
+interface PowSolution {
+  challenge: string
+  nonce: string
+}
+
+async function obtainPowSolution(): Promise<PowSolution> {
+  const res = await fetch('/api/pow-challenge', { method: 'GET' })
+  if (!res.ok) throw new ApiError(res.status, `Не удалось получить PoW challenge: ${res.status}`)
+  const { challenge, difficulty } = (await res.json()) as PowChallengeResponse
+  const nonce = await solveChallenge(challenge, difficulty)
+  return { challenge, nonce }
+}
+
+/** Отправляет подписанный запрос через `POST /api/proxy`. */
+async function sendProxyRequest<T>(
+  body: Record<string, unknown>,
+  signal?: AbortSignal,
+  captchaToken?: string,
+  pow?: PowSolution,
+): Promise<T> {
+  const token = captchaToken || consumeCaptchaToken()
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'X-Client-FP': getFingerprint(),
+  }
+  if (token) headers['X-Captcha-Token'] = token
+  if (pow) {
+    headers['X-PoW-Challenge'] = pow.challenge
+    headers['X-PoW-Nonce'] = pow.nonce
+  }
+
+  const res = await fetch('/api/proxy', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+    signal,
+  })
+  if (!res.ok) {
+    let errText = ''
+    try {
+      errText = await res.text()
+    } catch {
+      // ignore
+    }
+    throw new ApiError(res.status, errText || `HTTP ${res.status}`)
+  }
+  if (res.status === 204) return undefined as T
+  const contentType = res.headers.get('content-type') || ''
+  if (contentType.includes('application/json')) {
+    return (await res.json()) as T
+  }
+  return (await res.text()) as unknown as T
+}
+
+/**
+ * Отправляет запрос к API через BFF-прокси, сопоставляя реальный path
+ * с зарегистрированным маршрутом (и его обфусцированным actionId).
+ */
+export async function proxyRequest<T>(
+  method: string,
+  path: string,
+  params: Record<string, unknown> = {},
+  signal?: AbortSignal,
+): Promise<T> {
+  const route = resolveRoute(method, path)
+  if (!route) {
+    throw new Error(`Не зарегистрировано действие для ${method.toUpperCase()} ${path}`)
+  }
+  const fullParams = { ...route.pathParams, ...params }
+  const actionId = route.actionId
+  const isSearch = route.search
+
+  const limiter = getRateLimiter()
+  if (!limiter.canRequest()) {
+    throw new RateLimitError(limiter.getWaitTime())
+  }
+  limiter.recordRequest()
+
+  const [signedRequest, powSolution] = await Promise.all([
+    createSignedRequest(actionId, fullParams),
+    obtainPowSolution(),
+  ])
+  if (isSearch) signedRequest.search = true
+
+  try {
+    const result = await sendProxyRequest<T>(signedRequest, signal, undefined, powSolution)
+    limiter.handleSuccess()
+    return result
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 429) {
+      let retryAfterSec: string | undefined
+      try {
+        const parsed = JSON.parse(error.message)
+        if (parsed.retryAfter) retryAfterSec = String(parsed.retryAfter)
+      } catch {
+        // Тело не JSON
+      }
+      limiter.handleTooManyRequests(retryAfterSec)
+      throw new RateLimitError(limiter.getWaitTime())
+    }
+
+    if (error instanceof ApiError && error.status === 403) {
+      let isCaptcha = false
+      try {
+        isCaptcha = JSON.parse(error.message).captchaRequired === true
+      } catch {
+        // Тело не JSON
+      }
+      if (isCaptcha) {
+        const captchaToken = await requestCaptcha()
+        const retryRequest = await createSignedRequest(actionId, fullParams)
+        if (isSearch) retryRequest.search = true
+        const retryPow = await obtainPowSolution()
+        return sendProxyRequest<T>(retryRequest, signal, captchaToken, retryPow)
+      }
+    }
+
+    throw error
+  }
+}

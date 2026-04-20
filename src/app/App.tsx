@@ -22,6 +22,7 @@ import { TradeAnalyticsPage } from '@/pages/TradeAnalyticsPage'
 import { BotDetectorPage } from '@/pages/BotDetectorPage'
 import { ItemsPage } from '@/pages/ItemsPage'
 import { ItemDetailsPage } from '@/pages/ItemDetailsPage'
+import { CaptchaModal } from '@/shared/ui/CaptchaModal'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,6 +37,7 @@ const queryClient = new QueryClient({
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <CaptchaModal />
       <BrowserRouter>
         <Routes>
           <Route element={<MainLayout />}>
