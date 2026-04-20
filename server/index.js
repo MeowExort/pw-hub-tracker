@@ -62,20 +62,22 @@ function actionHash(name) {
 
 // --- Карта действий: hash → { method, path, search? } ---
 
+// Формат: [name, method, path, isSearch?, isMarket?].
+// Rate-limit и CAPTCHA применяются только к действиям с isMarket=true.
 const RAW_ACTIONS = [
-  // pshop
-  ['getMarketSummary', 'GET', '/api/pshop/market-summary'],
-  ['getItems', 'GET', '/api/pshop/items', true],
-  ['getPopularItems', 'GET', '/api/pshop/items/popular'],
-  ['getPriceHistory', 'GET', '/api/pshop/items/:itemId/price-history'],
-  ['getItemSpread', 'GET', '/api/pshop/items/:itemId/spread'],
-  ['getTradesSummary', 'GET', '/api/pshop/trades/summary'],
-  ['getTradesByItem', 'GET', '/api/pshop/trades/by-item'],
-  ['getPlayerShop', 'GET', '/api/pshop/players/:server/:playerId/shop'],
-  ['getShops', 'GET', '/api/shops/:server', true],
-  ['getShopsItemsAutocomplete', 'GET', '/api/shops/:server/items-autocomplete', true],
-  ['getBots', 'GET', '/api/pshop/bots'],
-  ['getBotScore', 'GET', '/api/pshop/players/:server/:playerId/bot-score'],
+  // --- Рынок (pshop / shops) — rate-limit + CAPTCHA ---
+  ['getMarketSummary', 'GET', '/api/pshop/market-summary', false, true],
+  ['getItems', 'GET', '/api/pshop/items', true, true],
+  ['getPopularItems', 'GET', '/api/pshop/items/popular', false, true],
+  ['getPriceHistory', 'GET', '/api/pshop/items/:itemId/price-history', false, true],
+  ['getItemSpread', 'GET', '/api/pshop/items/:itemId/spread', false, true],
+  ['getTradesSummary', 'GET', '/api/pshop/trades/summary', false, true],
+  ['getTradesByItem', 'GET', '/api/pshop/trades/by-item', false, true],
+  ['getPlayerShop', 'GET', '/api/pshop/players/:server/:playerId/shop', false, true],
+  ['getShops', 'GET', '/api/shops/:server', true, true],
+  ['getShopsItemsAutocomplete', 'GET', '/api/shops/:server/items-autocomplete', true, true],
+  ['getBots', 'GET', '/api/pshop/bots', false, true],
+  ['getBotScore', 'GET', '/api/pshop/players/:server/:playerId/bot-score', false, true],
   // players
   ['getPlayers', 'GET', '/api/players', true],
   ['getPlayerById', 'GET', '/api/arena/players/:server/:playerId'],
@@ -120,8 +122,14 @@ const RAW_ACTIONS = [
 ]
 
 const ACTION_ROUTE_MAP = {}
-for (const [name, method, routePath, isSearch] of RAW_ACTIONS) {
-  ACTION_ROUTE_MAP[actionHash(name)] = { method, path: routePath, isSearch: !!isSearch, name }
+for (const [name, method, routePath, isSearch, isMarket] of RAW_ACTIONS) {
+  ACTION_ROUTE_MAP[actionHash(name)] = {
+    method,
+    path: routePath,
+    isSearch: !!isSearch,
+    isMarket: !!isMarket,
+    name,
+  }
 }
 
 // --- Rate Limiting ---
@@ -385,27 +393,32 @@ app.post('/api/proxy', async (req, res) => {
     const body = req.body || {}
     const ip = getClientIp(req)
     const fp = req.headers['x-client-fp'] || ''
-    const isSearch = !!body.search || !!(ACTION_ROUTE_MAP[body.action]?.isSearch)
+    const routeMeta = ACTION_ROUTE_MAP[body.action]
+    const isSearch = !!body.search || !!(routeMeta?.isSearch)
+    const isMarket = !!(routeMeta?.isMarket)
 
-    // 1) Rate limit
-    const limit = rateLimiter.check(ip, fp, isSearch)
-    if (limit.limited) {
-      return res
-        .status(429)
-        .set('Retry-After', String(limit.retryAfterSec))
-        .json({ error: 'Слишком много запросов', retryAfter: limit.retryAfterSec })
-    }
-
-    // 2) CAPTCHA эскалация
-    if (limit.captchaRequired) {
-      const token = req.headers['x-captcha-token']
-      if (!token) {
-        return res.status(403).json({ error: 'Требуется CAPTCHA', captchaRequired: true })
+    // 1) Rate limit и CAPTCHA — только для "рыночных" действий.
+    let limit = { limited: false, retryAfterSec: 0, slowdownMs: 0, captchaRequired: false }
+    if (isMarket) {
+      limit = rateLimiter.check(ip, fp, isSearch)
+      if (limit.limited) {
+        return res
+          .status(429)
+          .set('Retry-After', String(limit.retryAfterSec))
+          .json({ error: 'Слишком много запросов', retryAfter: limit.retryAfterSec })
       }
-      if (HCAPTCHA_SECRET) {
-        const ok = await verifyCaptcha(token, ip, HCAPTCHA_SECRET)
-        if (!ok) {
-          return res.status(403).json({ error: 'Невалидный CAPTCHA-токен', captchaRequired: true })
+
+      // 2) CAPTCHA эскалация
+      if (limit.captchaRequired) {
+        const token = req.headers['x-captcha-token']
+        if (!token) {
+          return res.status(403).json({ error: 'Требуется CAPTCHA', captchaRequired: true })
+        }
+        if (HCAPTCHA_SECRET) {
+          const ok = await verifyCaptcha(token, ip, HCAPTCHA_SECRET)
+          if (!ok) {
+            return res.status(403).json({ error: 'Невалидный CAPTCHA-токен', captchaRequired: true })
+          }
         }
       }
     }
@@ -434,12 +447,14 @@ app.post('/api/proxy', async (req, res) => {
       return res.status(403).json({ error: 'Неверная подпись запроса' })
     }
 
-    // 5) Slowdown
+    // 5) Slowdown (только для рыночных действий)
     if (limit.slowdownMs > 0) {
       await new Promise((r) => setTimeout(r, limit.slowdownMs))
     }
 
-    rateLimiter.record(ip, fp, isSearch)
+    if (isMarket) {
+      rateLimiter.record(ip, fp, isSearch)
+    }
 
     // 6) Маршрутизация
     const route = ACTION_ROUTE_MAP[body.action]

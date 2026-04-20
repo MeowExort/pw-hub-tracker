@@ -118,12 +118,14 @@ export async function proxyRequest<T>(
   const fullParams = { ...route.pathParams, ...params }
   const actionId = route.actionId
   const isSearch = route.search
+  const isMarket = route.market
 
-  const limiter = getRateLimiter()
-  if (!limiter.canRequest()) {
+  // Rate-limit применяется только к рыночным действиям (pshop/магазины/предметы).
+  const limiter = isMarket ? getRateLimiter() : null
+  if (limiter && !limiter.canRequest()) {
     throw new RateLimitError(limiter.getWaitTime())
   }
-  limiter.recordRequest()
+  limiter?.recordRequest()
 
   const [signedRequest, powSolution] = await Promise.all([
     createSignedRequest(actionId, fullParams),
@@ -133,7 +135,7 @@ export async function proxyRequest<T>(
 
   try {
     const result = await sendProxyRequest<T>(signedRequest, signal, undefined, powSolution)
-    limiter.handleSuccess()
+    limiter?.handleSuccess()
     return result
   } catch (error) {
     if (error instanceof ApiError && error.status === 429) {
@@ -144,11 +146,15 @@ export async function proxyRequest<T>(
       } catch {
         // Тело не JSON
       }
-      limiter.handleTooManyRequests(retryAfterSec)
-      throw new RateLimitError(limiter.getWaitTime())
+      if (limiter) {
+        limiter.handleTooManyRequests(retryAfterSec)
+        throw new RateLimitError(limiter.getWaitTime())
+      }
+      throw new RateLimitError(retryAfterSec ? Number(retryAfterSec) * 1000 : 1000)
     }
 
-    if (error instanceof ApiError && error.status === 403) {
+    // CAPTCHA-эскалация возможна только для рыночных действий.
+    if (isMarket && error instanceof ApiError && error.status === 403) {
       let isCaptcha = false
       try {
         isCaptcha = JSON.parse(error.message).captchaRequired === true

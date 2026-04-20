@@ -32,21 +32,30 @@ const dotEnv = loadDotEnv()
  * В клиентский бандл попадает только `[method, pathTemplate, actionHash, isSearch]`,
  * без имён действий.
  */
-type RawAction = [string, string, string, boolean?]
+/**
+ * Признак "рыночного" действия. Rate limiting и CAPTCHA применяются только
+ * к `market: true` — это страницы Рынка (pshop/магазины/предметы/дэшборд,
+ * боты и т.п.). Для остальных действий (players/teams/matches/analytics)
+ * ограничения по частоте и CAPTCHA не применяются.
+ *
+ * PoW и HMAC-подпись продолжают действовать для всех запросов — это общая
+ * защита API от прямого парсинга в обход клиента.
+ */
+type RawAction = [string, string, string, boolean?, boolean?] // [name, method, path, isSearch, isMarket]
 const ACTIONS: RawAction[] = [
-  // pshop
-  ['getMarketSummary', 'GET', '/api/pshop/market-summary'],
-  ['getItems', 'GET', '/api/pshop/items', true],
-  ['getPopularItems', 'GET', '/api/pshop/items/popular'],
-  ['getPriceHistory', 'GET', '/api/pshop/items/:itemId/price-history'],
-  ['getItemSpread', 'GET', '/api/pshop/items/:itemId/spread'],
-  ['getTradesSummary', 'GET', '/api/pshop/trades/summary'],
-  ['getTradesByItem', 'GET', '/api/pshop/trades/by-item'],
-  ['getPlayerShop', 'GET', '/api/pshop/players/:server/:playerId/shop'],
-  ['getShops', 'GET', '/api/shops/:server', true],
-  ['getShopsItemsAutocomplete', 'GET', '/api/shops/:server/items-autocomplete', true],
-  ['getBots', 'GET', '/api/pshop/bots'],
-  ['getBotScore', 'GET', '/api/pshop/players/:server/:playerId/bot-score'],
+  // --- Рынок (pshop / shops) — защищаем rate-limit + CAPTCHA ---
+  ['getMarketSummary', 'GET', '/api/pshop/market-summary', false, true],
+  ['getItems', 'GET', '/api/pshop/items', true, true],
+  ['getPopularItems', 'GET', '/api/pshop/items/popular', false, true],
+  ['getPriceHistory', 'GET', '/api/pshop/items/:itemId/price-history', false, true],
+  ['getItemSpread', 'GET', '/api/pshop/items/:itemId/spread', false, true],
+  ['getTradesSummary', 'GET', '/api/pshop/trades/summary', false, true],
+  ['getTradesByItem', 'GET', '/api/pshop/trades/by-item', false, true],
+  ['getPlayerShop', 'GET', '/api/pshop/players/:server/:playerId/shop', false, true],
+  ['getShops', 'GET', '/api/shops/:server', true, true],
+  ['getShopsItemsAutocomplete', 'GET', '/api/shops/:server/items-autocomplete', true, true],
+  ['getBots', 'GET', '/api/pshop/bots', false, true],
+  ['getBotScore', 'GET', '/api/pshop/players/:server/:playerId/bot-score', false, true],
   // players
   ['getPlayers', 'GET', '/api/players', true],
   ['getPlayerById', 'GET', '/api/arena/players/:server/:playerId'],
@@ -110,8 +119,14 @@ const SIGNING_SECRET = signingSecret
  * Массив маршрутов для клиентского бандла — имена действий намеренно не
  * включены: используются только хеши.
  */
-const CLIENT_ROUTES: Array<[string, string, string, boolean]> = ACTIONS.map(
-  ([name, method, routePath, isSearch]) => [method, routePath, hashAction(name, BUILD_SALT), !!isSearch],
+const CLIENT_ROUTES: Array<[string, string, string, boolean, boolean]> = ACTIONS.map(
+  ([name, method, routePath, isSearch, isMarket]) => [
+    method,
+    routePath,
+    hashAction(name, BUILD_SALT),
+    !!isSearch,
+    !!isMarket,
+  ],
 )
 
 /**

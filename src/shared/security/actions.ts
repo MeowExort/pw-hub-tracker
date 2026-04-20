@@ -8,26 +8,31 @@
  * `[method, pathTemplate, actionHash, isSearch]`.
  */
 
-/** Единица маршрутизации: HTTP-метод, шаблон пути, хеш действия, признак поиска. */
+/**
+ * Единица маршрутизации: HTTP-метод, шаблон пути, хеш действия, признак поиска,
+ * признак "рыночного" действия (rate-limit/CAPTCHA применяются только к ним).
+ */
 export interface RouteEntry {
   method: string
   path: string
   actionId: string
   search: boolean
+  market: boolean
 }
 
 /**
  * Массив маршрутов, подставляется Vite define при сборке.
- * Порядок: `[method, path, actionId, isSearch]`.
+ * Порядок: `[method, path, actionId, isSearch, isMarket]`.
  */
-const RAW_ROUTES: Array<[string, string, string, boolean]> =
-  __ACTION_MAP__ as unknown as Array<[string, string, string, boolean]>
+const RAW_ROUTES: Array<[string, string, string, boolean, boolean]> =
+  __ACTION_MAP__ as unknown as Array<[string, string, string, boolean, boolean]>
 
-const ROUTES: RouteEntry[] = RAW_ROUTES.map(([method, path, actionId, search]) => ({
+const ROUTES: RouteEntry[] = RAW_ROUTES.map(([method, path, actionId, search, market]) => ({
   method,
   path,
   actionId,
   search: !!search,
+  market: !!market,
 }))
 
 /** Возвращает все зарегистрированные маршруты (read-only). */
@@ -42,13 +47,18 @@ export function getRoutes(): ReadonlyArray<RouteEntry> {
 export function resolveRoute(
   method: string,
   actualPath: string,
-): { actionId: string; pathParams: Record<string, string>; search: boolean } | null {
+): { actionId: string; pathParams: Record<string, string>; search: boolean; market: boolean } | null {
   const upper = method.toUpperCase()
   for (const route of ROUTES) {
     if (route.method !== upper) continue
     const params = matchPath(route.path, actualPath)
     if (params !== null) {
-      return { actionId: route.actionId, pathParams: params, search: route.search }
+      return {
+        actionId: route.actionId,
+        pathParams: params,
+        search: route.search,
+        market: route.market,
+      }
     }
   }
   return null

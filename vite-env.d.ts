@@ -6,8 +6,8 @@ declare const __SIGNING_SECRET__: string
 /** Соль, использованная для генерации хешей действий (инжектится Vite при сборке). */
 declare const __BUILD_SALT__: string
 
-/** Массив маршрутов `[method, pathTemplate, actionHash, isSearch]` (инжектится Vite при сборке). */
-declare const __ACTION_MAP__: Array<[string, string, string, boolean]>
+/** Массив маршрутов `[method, pathTemplate, actionHash, isSearch, isMarket]` (инжектится Vite при сборке). */
+declare const __ACTION_MAP__: Array<[string, string, string, boolean, boolean]>
 
 interface ImportMetaEnv {
   readonly VITE_API_URL?: string
