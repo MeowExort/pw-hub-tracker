@@ -1,0 +1,354 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.headerTitle {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.backLink {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  text-decoration: none;
+  &:hover {
+    color: var(--primary);
+  }
+}
+
+.title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  margin: 0;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(0, 3fr);
+  gap: var(--space-md);
+  align-items: start;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+    .sidebar {
+      position: static;
+    }
+  }
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  position: sticky;
+  top: var(--space-md);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.orderBook {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+
+  @media (max-width: 700px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.orderBookCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+
+  &.side_sell {
+    border-top: 2px solid var(--danger, #e74c3c);
+  }
+  &.side_buy {
+    border-top: 2px solid var(--success, #2ecc71);
+  }
+}
+
+.orderBookHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-sm);
+
+  .cardTitle {
+    margin: 0 0 2px 0;
+  }
+}
+
+.orderBookSubtitle {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.orderBookBest {
+  text-align: right;
+}
+
+.orderBookTotals {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  padding: var(--space-xs) 0;
+  border-bottom: 1px dashed var(--border);
+}
+
+.side_sell_price {
+  color: var(--danger, #e74c3c);
+  font-weight: 600;
+}
+
+.side_buy_price {
+  color: var(--success, #2ecc71);
+  font-weight: 600;
+}
+
+.seenAt {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+}
+
+.priceGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm) var(--space-md);
+}
+
+.priceLabel {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+
+.priceValue {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.openShopsLink {
+  display: block;
+  text-align: center;
+  padding: var(--space-sm);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--primary);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+
+  &:hover {
+    background: var(--bg-secondary);
+  }
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+.cardTitle {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  margin: 0 0 var(--space-md) 0;
+}
+
+.itemBasicInfo {
+  display: flex;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.mainIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+.basicText {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.id {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.category {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.description {
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+
+.trendBlock {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+
+.trendIcon {
+  font-size: 24px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  
+  &.up { background: rgba(var(--success-rgb, 46, 204, 113), 0.1); color: var(--success); }
+  &.down { background: rgba(var(--danger-rgb, 231, 76, 60), 0.1); color: var(--danger); }
+  &.stable { background: rgba(var(--text-secondary-rgb, 149, 165, 166), 0.1); color: var(--text-secondary); }
+}
+
+.trendValue {
+  display: flex;
+  flex-direction: column;
+}
+
+.trendPercent {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
+.trendLabel {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.confidence {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.periodSelector {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-secondary);
+  padding: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.periodBtn {
+  padding: 4px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+
+  &:hover {
+    color: var(--text);
+  }
+
+  &.periodBtnActive {
+    background: var(--card);
+    color: var(--primary);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+}
+
+.chartWrapper {
+  height: 350px;
+}
+
+.marketTables {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+
+  th, td {
+    padding: var(--space-sm);
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+}
+
+.price, .count {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.playerLink {
+  color: var(--primary);
+  text-decoration: none;
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.empty {
+  text-align: center;
+  padding: var(--space-md);
+  color: var(--text-muted);
+}

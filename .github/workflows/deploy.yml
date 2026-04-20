@@ -1,4 +1,4 @@
-name: Build and deploy arena tracker
+name: Build and deploy tracker
 
 on:
   push:

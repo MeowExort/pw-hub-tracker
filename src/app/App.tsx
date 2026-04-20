@@ -15,6 +15,13 @@ import { AnalyticsPlayersPage } from '@/pages/AnalyticsPlayersPage'
 import { AnalyticsTimePage } from '@/pages/AnalyticsTimePage'
 import { AnalyticsServersPage } from '@/pages/AnalyticsServersPage'
 import {MizarClanComparePage} from "@/pages/MizarClanComparePage";
+import { MarketDashboardPage } from '@/pages/MarketDashboardPage'
+import { ShopsPage } from '@/pages/ShopsPage'
+import { ShopProfilePage } from '@/pages/ShopProfilePage'
+import { TradeAnalyticsPage } from '@/pages/TradeAnalyticsPage'
+import { BotDetectorPage } from '@/pages/BotDetectorPage'
+import { ItemsPage } from '@/pages/ItemsPage'
+import { ItemDetailsPage } from '@/pages/ItemDetailsPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +49,13 @@ export function App() {
             <Route path="/clan-compare" element={<ClanComparePage />} />
             <Route path="/centaur-clan-compare" element={<CentaurClanComparePage />} />
             <Route path="/mizar-clan-compare" element={<MizarClanComparePage />} />
+            <Route path="/market" element={<MarketDashboardPage />} />
+            <Route path="/shops" element={<ShopsPage />} />
+            <Route path="/shops/:server/:playerId" element={<ShopProfilePage />} />
+            <Route path="/trades" element={<TradeAnalyticsPage />} />
+            <Route path="/bots" element={<BotDetectorPage />} />
+            <Route path="/items" element={<ItemsPage />} />
+            <Route path="/items/:id" element={<ItemDetailsPage />} />
             <Route path="/analytics/classes" element={<AnalyticsClassesPage />} />
             <Route path="/analytics/players" element={<AnalyticsPlayersPage />} />
             <Route path="/analytics/time" element={<AnalyticsTimePage />} />

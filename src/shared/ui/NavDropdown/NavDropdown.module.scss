@@ -1,0 +1,72 @@
+.dropdown {
+  position: relative;
+}
+
+.trigger {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  user-select: none;
+  background: none;
+  border: none;
+  font-family: inherit;
+
+  &:hover {
+    color: var(--text);
+    background: var(--card-hover);
+  }
+
+  &::after {
+    content: ' ▾';
+    font-size: 10px;
+  }
+}
+
+.triggerActive {
+  color: var(--primary);
+  background: rgba(91, 127, 245, 0.1);
+}
+
+.menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  padding-top: 4px;
+  z-index: 200;
+}
+
+.menuInner {
+  min-width: 200px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-xs) 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.menuItem {
+  display: block;
+  padding: var(--space-sm) var(--space-md);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--text);
+    background: var(--card-hover);
+  }
+}
+
+.menuItemActive {
+  color: var(--primary);
+  background: rgba(91, 127, 245, 0.1);
+}

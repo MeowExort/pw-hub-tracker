@@ -23,12 +23,15 @@ export class ApiError extends Error {
  */
 export async function apiGet<T>(
   path: string,
-  params?: Record<string, string | number | undefined>,
+  params?: Record<string, string | number | Array<string | number> | undefined>,
 ): Promise<T> {
   const url = new URL(`${BASE_URL}${path}`)
   if (params) {
     for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined) {
+      if (value === undefined) continue
+      if (Array.isArray(value)) {
+        for (const v of value) url.searchParams.append(key, String(v))
+      } else {
         url.searchParams.set(key, String(value))
       }
     }

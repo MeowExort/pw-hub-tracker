@@ -1,7 +1,7 @@
 {
-  "name": "PW Hub Arena Tracker",
-  "short_name": "PW Hub Arena Tracker",
-  "description": "Perfect World Hub Arena Tracker",
+  "name": "PW Hub Tracker",
+  "short_name": "PW Hub Tracker",
+  "description": "Perfect World Hub Tracker",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a1a2e",

@@ -25,15 +25,28 @@
   gap: var(--space-xl);
 }
 
+.header .container > .logo {
+  margin-left: calc(var(--space-md) - var(--space-xl));
+}
+
 .logo {
   font-size: var(--font-size-lg);
   font-weight: 700;
   color: var(--text);
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
 
   &:hover {
     color: var(--primary);
   }
+}
+
+.logoIcon {
+  width: 24px;
+  height: 24px;
+  display: block;
 }
 
 .nav {
@@ -63,4 +76,120 @@
 .main {
   flex: 1;
   padding: var(--space-lg) 0;
+}
+
+/* --- Footer (Вариант 4: «витрина экосистемы») --- */
+.footer {
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  margin-top: var(--space-xl);
+  padding: var(--space-xl) 0;
+}
+
+.footerHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-lg);
+}
+
+.footerBrand {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+
+.footerTagline {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.footerApps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-md);
+}
+
+.footerApp {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--text);
+  background: var(--bg, transparent);
+  transition: all var(--transition-fast);
+
+  &:hover {
+    border-color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+.footerAppCurrent {
+  border-color: var(--primary);
+  background: rgba(91, 127, 245, 0.06);
+}
+
+.footerAppIcon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.footerAppIconImg {
+  width: 28px;
+  height: 28px;
+  display: block;
+  object-fit: contain;
+}
+
+.footerAppBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.footerAppTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-size-md, var(--font-size-sm));
+  font-weight: 600;
+  color: var(--text);
+}
+
+.footerAppDesc {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.footerBadge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+}
+
+.footerCopy {
+  margin-top: var(--space-lg);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  text-align: center;
 }
