@@ -100,6 +100,97 @@ export function _redisDebug() {
   return { prefix: PREFIX, ready, disabled: DISABLED, lastError: lastError?.message || null }
 }
 
+/**
+ * Выполнить smoke-проверку доступности Redis: ожидание готовности клиента,
+ * PING, и цикл SET/GET/DEL тестового ключа. Не бросает исключений —
+ * возвращает структурированный результат для логирования при старте.
+ *
+ * @param {{ timeoutMs?: number }} [opts]
+ * @returns {Promise<{
+ *   ok: boolean,
+ *   disabled: boolean,
+ *   ready: boolean,
+ *   latencyMs?: number,
+ *   ping?: string,
+ *   error?: string,
+ *   step?: 'wait'|'ping'|'set'|'get'|'verify'|'del',
+ * }>}
+ */
+export async function checkRedis(opts = {}) {
+  const timeoutMs = Number(opts.timeoutMs ?? 3000)
+  if (DISABLED) {
+    return { ok: false, disabled: true, ready: false, error: 'REDIS_DISABLED' }
+  }
+  if (!client) {
+    return { ok: false, disabled: false, ready: false, error: 'client_not_initialized' }
+  }
+  const started = Date.now()
+  try {
+    if (!ready) {
+      await new Promise((resolve, reject) => {
+        const onReady = () => {
+          client.off('ready', onReady)
+          client.off('error', onError)
+          clearTimeout(t)
+          resolve()
+        }
+        const onError = (err) => {
+          client.off('ready', onReady)
+          client.off('error', onError)
+          clearTimeout(t)
+          reject(err)
+        }
+        const t = setTimeout(() => {
+          client.off('ready', onReady)
+          client.off('error', onError)
+          reject(new Error(`timeout ${timeoutMs}ms waiting for ready`))
+        }, timeoutMs)
+        client.once('ready', onReady)
+        client.once('error', onError)
+      })
+    }
+
+    const pong = await client.ping()
+    const key = `healthcheck:${process.pid}:${Date.now()}`
+    const value = `ok-${Math.random().toString(36).slice(2, 10)}`
+
+    const setRes = await client.set(key, value, 'EX', 10)
+    if (setRes !== 'OK') {
+      return { ok: false, disabled: false, ready: true, step: 'set', error: `SET returned ${setRes}` }
+    }
+    const got = await client.get(key)
+    if (got !== value) {
+      // Подстрахуемся: удалим ключ перед возвратом.
+      try { await client.del(key) } catch {}
+      return {
+        ok: false,
+        disabled: false,
+        ready: true,
+        step: 'verify',
+        error: `GET mismatch: expected ${value}, got ${got}`,
+      }
+    }
+    const delRes = await client.del(key)
+    if (delRes !== 1) {
+      return { ok: false, disabled: false, ready: true, step: 'del', error: `DEL returned ${delRes}` }
+    }
+    return {
+      ok: true,
+      disabled: false,
+      ready: true,
+      ping: pong,
+      latencyMs: Date.now() - started,
+    }
+  } catch (e) {
+    return {
+      ok: false,
+      disabled: false,
+      ready,
+      error: e?.message || String(e),
+    }
+  }
+}
+
 /** Закрыть соединение (например, при graceful shutdown). */
 export async function closeRedis() {
   if (!client) return

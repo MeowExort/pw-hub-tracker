@@ -40,6 +40,7 @@ import {
   deleteAlert,
 } from './alerts.js'
 import { startAlertsWorker } from './alerts-worker.js'
+import { checkRedis, _redisDebug } from './redis.js'
 import { createShare, readShare } from './share.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -878,4 +879,26 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`[BFF] BUILD_SALT=${buildSalt ? 'задан' : 'НЕТ'}`)
   console.log(`[BFF] SIGNING_SECRET=${signingSecret ? 'задан' : 'НЕТ'}`)
   console.log(`[BFF] Зарегистрировано действий: ${Object.keys(ACTION_ROUTE_MAP).length}`)
+
+  // Smoke-проверка Redis: PING + цикл SET/GET/DEL тестового ключа.
+  // Не роняем процесс при ошибке — модули автоматически уходят на in-memory fallback.
+  checkRedis({ timeoutMs: 5000 })
+    .then((res) => {
+      const dbg = _redisDebug()
+      if (res.ok) {
+        console.log(
+          `[redis][healthcheck] OK (ping=${res.ping}, latency=${res.latencyMs}ms, prefix=${dbg.prefix})`,
+        )
+      } else if (res.disabled) {
+        console.warn('[redis][healthcheck] пропущено: Redis отключён (REDIS_DISABLED)')
+      } else {
+        console.warn(
+          `[redis][healthcheck] FAIL${res.step ? ` на шаге ${res.step}` : ''}: ${res.error} ` +
+            `(ready=${res.ready}, prefix=${dbg.prefix}) — используется in-memory fallback`,
+        )
+      }
+    })
+    .catch((e) => {
+      console.warn('[redis][healthcheck] неожиданная ошибка:', e?.message || e)
+    })
 })
