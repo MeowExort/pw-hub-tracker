@@ -45,8 +45,11 @@ export function AddItemDialog({ open, server, excludeIds, onClose, onAdd }: AddI
   if (!open) return null
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={`${styles.modal} ${styles.modalWide}`} onClick={(e) => e.stopPropagation()}>
+    <div
+      className={styles.modalOverlay}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className={`${styles.modal} ${styles.modalWide}`}>
         <div className={styles.modalHeader}>
           <h3>Добавить предмет</h3>
         </div>

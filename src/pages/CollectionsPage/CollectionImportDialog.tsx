@@ -72,8 +72,11 @@ export function CollectionImportDialog({ initialCode, onClose, onImport }: Colle
   }
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+    <div
+      className={styles.modalOverlay}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className={styles.modal}>
         <div className={styles.modalHeader}>
           <h3>Импорт подборки</h3>
           <button className={styles.iconBtn} onClick={onClose} aria-label="Закрыть">✕</button>

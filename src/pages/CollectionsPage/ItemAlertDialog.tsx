@@ -149,11 +149,11 @@ export function ItemAlertDialog({
   }
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div
-        className={`${styles.modal} ${styles.modalWide}`}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div
+      className={styles.modalOverlay}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className={`${styles.modal} ${styles.modalWide}`}>
         <div className={styles.modalHeader}>
           <h3>🔔 Алерт: {itemName ?? `#${entry.itemId}`}</h3>
         </div>

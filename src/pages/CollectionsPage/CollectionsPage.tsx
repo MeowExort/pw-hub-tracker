@@ -320,8 +320,11 @@ export function CollectionsPage() {
       />
 
       {confirmResetOpen && (
-        <div className={styles.modalOverlay} onClick={() => setConfirmResetOpen(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div
+          className={styles.modalOverlay}
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setConfirmResetOpen(false) }}
+        >
+          <div className={styles.modal}>
             <div className={styles.modalHeader}>
               <h3>Сбросить предустановленные?</h3>
             </div>
