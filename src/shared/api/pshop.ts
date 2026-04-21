@@ -1,4 +1,4 @@
-import { apiGet } from './client'
+import { apiGet, apiPost } from './client'
 
 /** Серверы PShop */
 export const PSHOP_SERVERS = ['capella', 'centaur', 'alkor', 'mizar'] as const
@@ -706,4 +706,73 @@ export function getTradesOverview(
     excludeOutliers:
       params.excludeOutliers !== undefined ? String(params.excludeOutliers) : undefined,
   } as Record<string, string | number | undefined>)
+}
+
+/* ─── Батч-информация по предметам (для страницы «Подборки») ─── */
+
+/** Набор полей, которые можно запросить в батче. */
+export type ItemsBatchField = 'meta' | 'sell' | 'buy' | 'sparkline' | 'trend' | 'stock'
+
+/** Мета-информация предмета в батч-ответе. */
+export interface ItemCardMeta {
+  name: string
+  nameColor: string
+  icon: string | null
+  description: string | null
+  category: string | null
+}
+
+/** Остатки/активность по предмету. */
+export interface ItemCardStock {
+  sellListings: number
+  sellTotalCount: number
+  buyListings: number
+  buyTotalCount: number
+  activeShops: number
+}
+
+/** Карточка предмета в батч-ответе. Поля опциональны в зависимости от `fields`. */
+export interface ItemCardDTO {
+  id: number
+  meta?: ItemCardMeta
+  sell?: PriceStats | null
+  buy?: PriceStats | null
+  stock?: ItemCardStock
+  sparkline?: Sparkline
+  trendPrediction?: TrendPrediction | null
+}
+
+/** Ответ POST /api/pshop/v2/items/batch. */
+export interface ItemsBatchResponse {
+  updatedAt: string
+  server: string
+  missing: number[]
+  /** Ключ — itemId в виде строки. */
+  items: Record<string, ItemCardDTO>
+}
+
+export interface GetItemsBatchParams {
+  server: PShopServer
+  ids: number[]
+  fields?: ItemsBatchField[]
+  sparkline?: {
+    days?: 7 | 14 | 30
+    points?: number
+    bucket?: 'hour' | 'day'
+  }
+  excludeOutliers?: boolean
+}
+
+/**
+ * Батч-загрузка данных по предметам: одним HTTP-запросом возвращает мета/цены/стоки
+ * (опционально sparkline и тренд) для всего списка `ids` (до 200).
+ */
+export function getItemsBatch(params: GetItemsBatchParams): Promise<ItemsBatchResponse> {
+  return apiPost<ItemsBatchResponse>('/api/pshop/v2/items/batch', {
+    server: params.server,
+    ids: params.ids,
+    fields: params.fields,
+    sparkline: params.sparkline,
+    excludeOutliers: params.excludeOutliers,
+  })
 }

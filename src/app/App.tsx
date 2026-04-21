@@ -22,6 +22,7 @@ import { TradeAnalyticsPage } from '@/pages/TradeAnalyticsPage'
 import { BotDetectorPage } from '@/pages/BotDetectorPage'
 import { ItemsPage } from '@/pages/ItemsPage'
 import { ItemDetailsPage } from '@/pages/ItemDetailsPage'
+import { CollectionsPage } from '@/pages/CollectionsPage'
 import { CaptchaModal } from '@/shared/ui/CaptchaModal'
 
 const queryClient = new QueryClient({
@@ -58,6 +59,7 @@ export function App() {
             <Route path="/bots" element={<BotDetectorPage />} />
             <Route path="/items" element={<ItemsPage />} />
             <Route path="/items/:id" element={<ItemDetailsPage />} />
+            <Route path="/collections" element={<CollectionsPage />} />
             <Route path="/analytics/classes" element={<AnalyticsClassesPage />} />
             <Route path="/analytics/players" element={<AnalyticsPlayersPage />} />
             <Route path="/analytics/time" element={<AnalyticsTimePage />} />

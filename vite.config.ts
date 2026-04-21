@@ -59,6 +59,7 @@ const ACTIONS: RawAction[] = [
   // v2-агрегаты (B1/B2/B3/B5)
   ['getShopProfile', 'GET', '/api/pshop/v2/players/:server/:playerId/shop-profile', false, true],
   ['getItemDetails', 'GET', '/api/pshop/v2/items/:itemId/details', false, true],
+  ['getItemsBatch', 'POST', '/api/pshop/v2/items/batch', false, true],
   ['getMarketDashboard', 'GET', '/api/pshop/v2/market/dashboard', false, true],
   ['getTradesOverview', 'GET', '/api/pshop/v2/trades/overview', false, true],
   // players
