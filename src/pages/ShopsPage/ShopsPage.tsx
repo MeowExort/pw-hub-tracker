@@ -2,7 +2,6 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
-  getItemSpread,
   getShops,
   getShopsItemsAutocomplete,
   type GetShopsParams,
@@ -56,16 +55,6 @@ export function ShopsPage() {
   const side = parseSide(searchParams.get('side'))
   const hasItemId = searchParams.get('hasItemId') ? parseInt(searchParams.get('hasItemId')!, 10) : undefined
 
-  // Подгружаем инфо по предмету (имя/иконку) для отображения в чипсе фильтра
-  const hasItemInfo = useQuery({
-    queryKey: ['shops-filter-item', server, hasItemId],
-    queryFn: () => getItemSpread(hasItemId!, server),
-    enabled: !!hasItemId,
-    staleTime: 5 * 60 * 1000,
-  })
-  const hasItemName = hasItemInfo.data?.name || ''
-  const hasItemIcon = hasItemInfo.data?.icon || ''
-
   const minSellMoney = searchParams.get('minSellMoney') || ''
   const maxSellMoney = searchParams.get('maxSellMoney') || ''
   const minBuyMoney = searchParams.get('minBuyMoney') || ''
@@ -113,6 +102,10 @@ export function ShopsPage() {
     queryKey: ['shops', server, queryParams],
     queryFn: () => getShops(server, queryParams),
   })
+
+  // B6: бэкенд возвращает filterItem при наличии hasItemId — отдельный запрос больше не нужен.
+  const hasItemName = shops.data?.filterItem?.name || ''
+  const hasItemIcon = shops.data?.filterItem?.icon || ''
 
   // --- Автокомплит предметов ---
   const [itemSearch, setItemSearch] = useState('')

@@ -1,11 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import {
-  getMarketSummary,
-  getPopularItems,
-  getTradesSummary,
-  type PopularItem,
-} from '@/shared/api/pshop'
+import { getMarketDashboard, type PopularItem } from '@/shared/api/pshop'
 import { ServerSelector } from '@/shared/ui/ServerSelector'
 import { usePShopServer } from '@/shared/hooks/usePShopServer'
 import { Spinner } from '@/shared/ui/Spinner'
@@ -18,34 +13,25 @@ import styles from '@/shared/styles/pshop.module.scss'
 export function MarketDashboardPage() {
   const [server, setServer] = usePShopServer()
 
-  const summary = useQuery({
-    queryKey: ['market-summary', server],
-    queryFn: () => getMarketSummary(server),
+  // B3: единый запрос вместо 4-х отдельных.
+  const dashboard = useQuery({
+    queryKey: ['market-dashboard', server],
+    queryFn: () =>
+      getMarketDashboard(server, { popularLimit: 10, tradesPeriod: '30d' }),
   })
 
-  const popularSell = useQuery({
-    queryKey: ['items-popular', server, 'sell', 10],
-    queryFn: () => getPopularItems(server, { isSell: true, limit: 10 }),
-  })
+  const summaryData = dashboard.data?.summary
+  const popularSellData = dashboard.data?.popular.sell
+  const popularBuyData = dashboard.data?.popular.buy
+  const tradesData = dashboard.data?.trades
 
-  const popularBuy = useQuery({
-    queryKey: ['items-popular', server, 'buy', 10],
-    queryFn: () => getPopularItems(server, { isSell: false, limit: 10 }),
-  })
-
-  const trades = useQuery({
-    queryKey: ['trades-summary', server],
-    queryFn: () => getTradesSummary(server),
-  })
-
-  const isLoading =
-    summary.isLoading || popularSell.isLoading || popularBuy.isLoading || trades.isLoading
-  const error = summary.error || popularSell.error || popularBuy.error || trades.error
+  const isLoading = dashboard.isLoading
+  const error = dashboard.error
 
   const turnover30d =
-    (trades.data?.sell?.totalMoney ?? 0) + (trades.data?.buy?.totalMoney ?? 0)
+    (tradesData?.sell?.totalMoney ?? 0) + (tradesData?.buy?.totalMoney ?? 0)
   const trades30d =
-    (trades.data?.sell?.totalTrades ?? 0) + (trades.data?.buy?.totalTrades ?? 0)
+    (tradesData?.sell?.totalTrades ?? 0) + (tradesData?.buy?.totalTrades ?? 0)
 
   return (
     <div>
@@ -58,24 +44,24 @@ export function MarketDashboardPage() {
       {error && <ErrorMessage message={(error as Error).message} />}
 
       {/* KPI-полоска */}
-      {summary.data && (
+      {summaryData && (
         <div className={styles.kpiStrip}>
           <div className={styles.kpiItem}>
-            🏪 <strong>{formatNumber(summary.data.activeShops)}</strong> магазинов
+            🏪 <strong>{formatNumber(summaryData.activeShops)}</strong> магазинов
           </div>
-          {summary.data.sell && (
+          {summaryData.sell && (
             <div className={styles.kpiItem}>
               <span className={styles.sell}>📈</span>{' '}
-              <strong>{formatNumber(summary.data.sell.totalListings)}</strong> лот. продажи
+              <strong>{formatNumber(summaryData.sell.totalListings)}</strong> лот. продажи
             </div>
           )}
-          {summary.data.buy && (
+          {summaryData.buy && (
             <div className={styles.kpiItem}>
               <span className={styles.buy}>📉</span>{' '}
-              <strong>{formatNumber(summary.data.buy.totalListings)}</strong> лот. скупки
+              <strong>{formatNumber(summaryData.buy.totalListings)}</strong> лот. скупки
             </div>
           )}
-          {trades.data && (
+          {tradesData && (
             <>
               <div className={styles.kpiItem}>
                 💰 <strong>{formatNumber(turnover30d)}</strong> оборот / 30д
@@ -89,60 +75,60 @@ export function MarketDashboardPage() {
       )}
 
       {/* Витрина: Топ продажи */}
-      {popularSell.data && popularSell.data.length > 0 && (
+      {popularSellData && popularSellData.length > 0 && (
         <div className={styles.section}>
           <div className={`${styles.sectionTitle} ${styles.sell}`}>
             📈 Топ популярных — продажа
           </div>
           <div className={styles.itemGrid}>
-            {popularSell.data.map((row, i) => renderItemCard(row, i, server))}
+            {popularSellData.map((row, i) => renderItemCard(row, i, server))}
           </div>
         </div>
       )}
 
       {/* Витрина: Топ скупки */}
-      {popularBuy.data && popularBuy.data.length > 0 && (
+      {popularBuyData && popularBuyData.length > 0 && (
         <div className={styles.section}>
           <div className={`${styles.sectionTitle} ${styles.buy}`}>
             📉 Топ популярных — скупка
           </div>
           <div className={styles.itemGrid}>
-            {popularBuy.data.map((row, i) => renderItemCard(row, i, server))}
+            {popularBuyData.map((row, i) => renderItemCard(row, i, server))}
           </div>
         </div>
       )}
 
       {/* Подробная статистика: Рынок сейчас */}
-      {summary.data && (
+      {summaryData && (
         <details className={styles.detailsSection}>
           <summary>📊 Подробная статистика рынка</summary>
           <div className={styles.twoColumns}>
             <div>
               <div className={`${styles.columnTitle} ${styles.sell}`}>📈 Продажа</div>
-              {summary.data.sell ? (
+              {summaryData.sell ? (
                 <div className={styles.cards}>
                   <div className={styles.card}>
                     <div className={styles.cardLabel}>Листингов</div>
                     <div className={styles.cardValue}>
-                      {formatNumber(summary.data.sell.totalListings)}
+                      {formatNumber(summaryData.sell.totalListings)}
                     </div>
                   </div>
                   <div className={styles.card}>
                     <div className={styles.cardLabel}>Стоимость витрины</div>
                     <div className={styles.cardValue}>
-                      {formatNumber(summary.data.sell.totalValue)}
+                      {formatNumber(summaryData.sell.totalValue)}
                     </div>
                   </div>
                   <div className={styles.card}>
                     <div className={styles.cardLabel}>Уникальных предметов</div>
                     <div className={styles.cardValue}>
-                      {formatNumber(summary.data.sell.uniqueItems)}
+                      {formatNumber(summaryData.sell.uniqueItems)}
                     </div>
                   </div>
                   <div className={styles.card}>
                     <div className={styles.cardLabel}>Средняя цена</div>
                     <div className={styles.cardValue}>
-                      {formatNumber(summary.data.sell.avgPrice)}
+                      {formatNumber(summaryData.sell.avgPrice)}
                     </div>
                   </div>
                 </div>
@@ -152,30 +138,30 @@ export function MarketDashboardPage() {
             </div>
             <div>
               <div className={`${styles.columnTitle} ${styles.buy}`}>📉 Скупка</div>
-              {summary.data.buy ? (
+              {summaryData.buy ? (
                 <div className={styles.cards}>
                   <div className={styles.card}>
                     <div className={styles.cardLabel}>Листингов</div>
                     <div className={styles.cardValue}>
-                      {formatNumber(summary.data.buy.totalListings)}
+                      {formatNumber(summaryData.buy.totalListings)}
                     </div>
                   </div>
                   <div className={styles.card}>
                     <div className={styles.cardLabel}>Стоимость бюджета</div>
                     <div className={styles.cardValue}>
-                      {formatNumber(summary.data.buy.totalValue)}
+                      {formatNumber(summaryData.buy.totalValue)}
                     </div>
                   </div>
                   <div className={styles.card}>
                     <div className={styles.cardLabel}>Уникальных предметов</div>
                     <div className={styles.cardValue}>
-                      {formatNumber(summary.data.buy.uniqueItems)}
+                      {formatNumber(summaryData.buy.uniqueItems)}
                     </div>
                   </div>
                   <div className={styles.card}>
                     <div className={styles.cardLabel}>Средняя цена</div>
                     <div className={styles.cardValue}>
-                      {formatNumber(summary.data.buy.avgPrice)}
+                      {formatNumber(summaryData.buy.avgPrice)}
                     </div>
                   </div>
                 </div>
@@ -188,30 +174,30 @@ export function MarketDashboardPage() {
       )}
 
       {/* Подробная статистика: Сделки за 30 дней */}
-      {trades.data && (
+      {tradesData && (
         <details className={styles.detailsSection}>
           <summary>💰 Подробная статистика сделок за 30 дней</summary>
           <div className={styles.twoColumns}>
             <div>
               <div className={`${styles.columnTitle} ${styles.sell}`}>📈 Продажи</div>
-              {trades.data.sell ? (
+              {tradesData.sell ? (
                 <div className={styles.cards}>
                   <div className={styles.card}>
                     <div className={styles.cardLabel}>Сделок</div>
                     <div className={styles.cardValue}>
-                      {formatNumber(trades.data.sell.totalTrades)}
+                      {formatNumber(tradesData.sell.totalTrades)}
                     </div>
                   </div>
                   <div className={styles.card}>
                     <div className={styles.cardLabel}>Предметов</div>
                     <div className={styles.cardValue}>
-                      {formatNumber(trades.data.sell.totalItems)}
+                      {formatNumber(tradesData.sell.totalItems)}
                     </div>
                   </div>
                   <div className={styles.card}>
                     <div className={styles.cardLabel}>Оборот</div>
                     <div className={styles.cardValue}>
-                      {formatNumber(trades.data.sell.totalMoney)}
+                      {formatNumber(tradesData.sell.totalMoney)}
                     </div>
                   </div>
                 </div>
@@ -221,24 +207,24 @@ export function MarketDashboardPage() {
             </div>
             <div>
               <div className={`${styles.columnTitle} ${styles.buy}`}>📉 Скупки</div>
-              {trades.data.buy ? (
+              {tradesData.buy ? (
                 <div className={styles.cards}>
                   <div className={styles.card}>
                     <div className={styles.cardLabel}>Сделок</div>
                     <div className={styles.cardValue}>
-                      {formatNumber(trades.data.buy.totalTrades)}
+                      {formatNumber(tradesData.buy.totalTrades)}
                     </div>
                   </div>
                   <div className={styles.card}>
                     <div className={styles.cardLabel}>Предметов</div>
                     <div className={styles.cardValue}>
-                      {formatNumber(trades.data.buy.totalItems)}
+                      {formatNumber(tradesData.buy.totalItems)}
                     </div>
                   </div>
                   <div className={styles.card}>
                     <div className={styles.cardLabel}>Оборот</div>
                     <div className={styles.cardValue}>
-                      {formatNumber(trades.data.buy.totalMoney)}
+                      {formatNumber(tradesData.buy.totalMoney)}
                     </div>
                   </div>
                 </div>

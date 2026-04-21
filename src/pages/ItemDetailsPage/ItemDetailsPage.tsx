@@ -2,10 +2,12 @@ import { useMemo, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  getItemSpread,
-  getPriceHistory,
-  getShops,
-  type ShopListItemExtended,
+  getItemDetails,
+  type ItemDetailsOffer,
+  type ItemDetailsHistoryItem,
+  type PriceHistoryResponse,
+  type PriceHistoryHourDetailed,
+  type PriceHistoryAgg,
 } from '@/shared/api/pshop'
 import { usePShopServer } from '@/shared/hooks/usePShopServer'
 import { ServerSelector } from '@/shared/ui/ServerSelector'
@@ -14,15 +16,32 @@ import { ErrorMessage } from '@/shared/ui/ErrorMessage'
 import { PriceHistoryChart } from '@/shared/ui/PriceHistoryChart'
 import { ItemDescription } from '@/shared/ui/ItemDescription'
 import { ShopTooltip } from '@/shared/ui/ShopTooltip'
-import { formatNumber, formatDate, daysAgoISO } from '@/shared/utils/pshop'
+import { formatNumber, formatDate } from '@/shared/utils/pshop'
 import styles from './ItemDetailsPage.module.scss'
 
 type Period = '7d' | '30d' | '90d'
 
-const PERIOD_DAYS: Record<Period, number> = {
-  '7d': 7,
-  '30d': 30,
-  '90d': 90,
+const PERIOD_DAYS: Record<Period, number> = { '7d': 7, '30d': 30, '90d': 90 }
+
+/** Adapter: B2 returns items tagged with 'kind'; PriceHistoryChart expects legacy union. */
+function toPriceHistoryResponse(
+  info: { name: string; nameColor: string; icon: string | null; description: string | null },
+  itemId: number,
+  history: { granularity: 'hourly' | 'daily'; items: ItemDetailsHistoryItem[] },
+): PriceHistoryResponse {
+  const items = history.items.map((it): PriceHistoryHourDetailed | PriceHistoryAgg => {
+    if (it.kind === 'hourly') {
+      const { kind: _k, ...rest } = it
+      return rest as PriceHistoryHourDetailed
+    }
+    const { kind: _k, ...rest } = it
+    return rest as PriceHistoryAgg
+  })
+  return {
+    item: { id: itemId, name: info.name, nameColor: info.nameColor, icon: info.icon, description: info.description },
+    granularity: history.granularity,
+    items,
+  }
 }
 
 type OfferRow = {
@@ -34,24 +53,15 @@ type OfferRow = {
   lastSeenAt: string
 }
 
-function toRows(
-  shops: ShopListItemExtended[] | undefined,
-  itemId: number,
-  isSell: boolean,
-): OfferRow[] {
-  if (!shops) return []
-  return shops.flatMap((s) =>
-    s.items
-      .filter((i) => i.itemId === itemId && i.isSell === isSell)
-      .map((i) => ({
-        shopId: s.id,
-        playerId: s.playerId,
-        playerName: s.player?.name ?? `#${s.playerId}`,
-        price: i.price,
-        count: i.itemCount,
-        lastSeenAt: s.lastSeenAt,
-      })),
-  )
+function offerToRow(o: ItemDetailsOffer): OfferRow {
+  return {
+    shopId: o.shopId,
+    playerId: o.playerId,
+    playerName: o.player?.name ?? `#${o.playerId}`,
+    price: o.price,
+    count: o.count,
+    lastSeenAt: o.lastSeenAt,
+  }
 }
 
 export function ItemDetailsPage() {
@@ -60,55 +70,21 @@ export function ItemDetailsPage() {
   const [server, setServer] = usePShopServer()
   const [period, setPeriod] = useState<Period>('30d')
 
-  const spreadQuery = useQuery({
-    queryKey: ['item-spread', itemId, server],
-    queryFn: () => getItemSpread(itemId, server),
-    enabled: !!itemId,
-  })
-
-  const historyQuery = useQuery({
-    queryKey: ['item-history', itemId, server, period],
-    queryFn: () => getPriceHistory(itemId, server, { from: daysAgoISO(PERIOD_DAYS[period]) }),
-    enabled: !!itemId,
-  })
-
-  const sellersQuery = useQuery({
-    queryKey: ['item-sellers', itemId, server],
+  // B2: единый запрос info+history+sellers+buyers вместо 4-х.
+  const detailsQuery = useQuery({
+    queryKey: ['item-details-v2', itemId, server, period],
     queryFn: () =>
-      getShops(server, {
-        hasItemId: itemId,
-        side: 'sell',
-        isActive: true,
-        orderBy: 'lastSeenAt',
-        order: 'desc',
-        pageSize: 100,
-      }),
-    enabled: !!itemId,
-  })
-
-  const buyersQuery = useQuery({
-    queryKey: ['item-buyers', itemId, server],
-    queryFn: () =>
-      getShops(server, {
-        hasItemId: itemId,
-        side: 'buy',
-        isActive: true,
-        orderBy: 'lastSeenAt',
-        order: 'desc',
-        pageSize: 100,
-      }),
+      getItemDetails(itemId, server, { historyPeriod: period, offersLimit: 100 }),
     enabled: !!itemId,
   })
 
   const sellers = useMemo(
-    () =>
-      toRows(sellersQuery.data?.items, itemId, true).sort((a, b) => a.price - b.price),
-    [sellersQuery.data, itemId],
+    () => (detailsQuery.data?.sellers.items ?? []).map(offerToRow),
+    [detailsQuery.data],
   )
   const buyers = useMemo(
-    () =>
-      toRows(buyersQuery.data?.items, itemId, false).sort((a, b) => b.price - a.price),
-    [buyersQuery.data, itemId],
+    () => (detailsQuery.data?.buyers.items ?? []).map(offerToRow),
+    [detailsQuery.data],
   )
 
   const sellTotals = useMemo(() => {
@@ -123,12 +99,17 @@ export function ItemDetailsPage() {
     return { count, avg: count ? money / count : 0 }
   }, [buyers])
 
-  if (spreadQuery.isLoading) return <Spinner />
-  if (spreadQuery.error) return <ErrorMessage message={(spreadQuery.error as Error).message} />
-  if (!spreadQuery.data) return <ErrorMessage message="Предмет не найден" />
+  if (detailsQuery.isLoading) return <Spinner />
+  if (detailsQuery.error) return <ErrorMessage message={(detailsQuery.error as Error).message} />
+  if (!detailsQuery.data) return <ErrorMessage message="Предмет не найден" />
 
-  const details = spreadQuery.data
+  const details = detailsQuery.data.info
   const spreadValue = details.sell && details.buy ? details.buy.max - details.sell.min : null
+  const historyData = toPriceHistoryResponse(
+    { name: details.name, nameColor: details.nameColor, icon: details.icon, description: details.description },
+    details.itemId,
+    detailsQuery.data.history,
+  )
 
   return (
     <div className={styles.container}>
@@ -231,9 +212,7 @@ export function ItemDetailsPage() {
               </div>
             </div>
             <div className={styles.chartWrapper}>
-              {historyQuery.isLoading ? <Spinner /> : historyQuery.data && (
-                <PriceHistoryChart data={historyQuery.data} height={350} />
-              )}
+              <PriceHistoryChart data={historyData} height={350} />
             </div>
           </div>
 
@@ -245,7 +224,7 @@ export function ItemDetailsPage() {
               side="sell"
               rows={sellers}
               totals={sellTotals}
-              isLoading={sellersQuery.isLoading}
+              isLoading={false}
               server={server}
               itemId={itemId}
             />
@@ -255,7 +234,7 @@ export function ItemDetailsPage() {
               side="buy"
               rows={buyers}
               totals={buyTotals}
-              isLoading={buyersQuery.isLoading}
+              isLoading={false}
               server={server}
               itemId={itemId}
             />

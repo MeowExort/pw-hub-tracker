@@ -2,8 +2,7 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  getTradesSummary,
-  getTradesByItem,
+  getTradesOverview,
   getShopsItemsAutocomplete,
   type TradeByItem,
   type TradeSideStats,
@@ -90,15 +89,11 @@ export function TradeAnalyticsPage() {
     setPage(1)
   }
 
-  const summary = useQuery({
-    queryKey: ['trades-summary', server, fromDate, toDate],
-    queryFn: () => getTradesSummary(server, { from: fromDate, to: toDate }),
-  })
-
-  const byItem = useQuery({
-    queryKey: ['trades-by-item', server, fromDate, toDate, itemId, page],
+  // B5: единый запрос summary + byItem.
+  const overview = useQuery({
+    queryKey: ['trades-overview', server, fromDate, toDate, itemId, page],
     queryFn: () =>
-      getTradesByItem(server, {
+      getTradesOverview(server, {
         from: fromDate,
         to: toDate,
         itemId,
@@ -106,6 +101,13 @@ export function TradeAnalyticsPage() {
         pageSize: PAGE_SIZE,
       }),
   })
+
+  const summary = { data: overview.data?.summary, error: overview.error, isLoading: overview.isLoading }
+  const byItem = {
+    data: overview.data?.byItem,
+    error: overview.error,
+    isLoading: overview.isLoading,
+  }
 
   const top10Sell = useMemo(() => {
     if (!byItem.data) return []

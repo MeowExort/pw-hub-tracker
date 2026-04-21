@@ -1,15 +1,12 @@
 import {useEffect, useMemo, useState} from 'react'
 import {Link, useParams} from 'react-router-dom'
-import {useQueries, useQuery} from '@tanstack/react-query'
+import {useQuery} from '@tanstack/react-query'
 import {
-    getBotScore,
-    getItemSpread,
-    getPlayerShop,
-    getPriceHistory,
+    getShopProfile,
     PSHOP_SERVERS,
-    type PriceHistoryResponse,
     type PShopServer,
     type ShopItemExtended,
+    type Sparkline as SparklineData,
 } from '@/shared/api/pshop'
 import {getPlayerById} from '@/shared/api/players'
 import {Spinner} from '@/shared/ui/Spinner'
@@ -17,20 +14,20 @@ import {ErrorMessage} from '@/shared/ui/ErrorMessage'
 import {ItemTooltip} from '@/shared/ui/ItemTooltip/ItemTooltip'
 import {PlayerTooltip} from '@/shared/ui/PlayerTooltip'
 import {getClassIcon, getClassName} from '@/shared/utils/format'
-import {daysAgoISO, formatDate, formatNumber, formatSeconds} from '@/shared/utils/pshop'
+import {formatDate, formatNumber, formatSeconds} from '@/shared/utils/pshop'
 import styles from './ShopProfilePage.module.scss'
 
 type ViewMode = 'grid' | 'table'
 type SortKey = 'default' | 'priceAsc' | 'priceDesc' | 'countDesc' | 'vsMarket'
 
-/** Инлайн SVG-спарклайн по avgPrice из истории цен за 7 дней */
-function Sparkline({history, isSell}: { history: PriceHistoryResponse | undefined; isSell: boolean }) {
+/** Инлайн SVG-спарклайн на основе агрегированных точек Sparkline (B1). */
+function Sparkline({sparkline, isSell}: { sparkline: SparklineData | undefined; isSell: boolean }) {
     const points = useMemo(() => {
-        if (!history?.items?.length) return [] as number[]
-        return history.items
-            .filter((p) => p.isSell === isSell && p.avgPrice > 0)
-            .map((p) => p.avgPrice)
-    }, [history, isSell])
+        if (!sparkline?.points?.length) return [] as number[]
+        return sparkline.points
+            .map((p) => (isSell ? p.sellMedian : p.buyMedian))
+            .filter((v): v is number => typeof v === 'number' && v > 0)
+    }, [sparkline, isSell])
 
     if (points.length < 2) return <div className={styles.sparkEmpty}/>
 
@@ -61,11 +58,11 @@ function Sparkline({history, isSell}: { history: PriceHistoryResponse | undefine
 interface ShopItemCardProps {
     item: ShopItemExtended
     marketAvg: number | null
-    history: PriceHistoryResponse | undefined
+    sparkline: SparklineData | undefined
     server: string
 }
 
-function ShopItemCard({item, marketAvg, history, server}: ShopItemCardProps) {
+function ShopItemCard({item, marketAvg, sparkline, server}: ShopItemCardProps) {
     let vsMarket: string | null = null
     let vsClass = ''
     if (marketAvg && marketAvg > 0) {
@@ -80,11 +77,14 @@ function ShopItemCard({item, marketAvg, history, server}: ShopItemCardProps) {
     return (
         <div className={styles.showcaseCard}>
             <ItemTooltip
+                itemId={item.itemId}
+                server={server}
                 name={name}
                 icon={item.item?.icon ?? ''}
                 nameColor={item.item?.nameColor ?? ''}
                 count={item.itemCount}
                 price={item.price}
+                sparkline={sparkline}
             >
                 <div className={styles.showcaseIconWrap}>
                     <img src={item.item?.icon ?? ''} alt={name} className={styles.showcaseIcon}/>
@@ -112,7 +112,7 @@ function ShopItemCard({item, marketAvg, history, server}: ShopItemCardProps) {
                     )}
                 </div>
                 <div className={styles.showcaseRow}>
-                    <Sparkline history={history} isSell={item.isSell}/>
+                    <Sparkline sparkline={sparkline} isSell={item.isSell}/>
                     <Link
                         to={`/items/${item.itemId}`}
                         className={styles.showcaseMarketLink}
@@ -135,7 +135,7 @@ function ShopItemCard({item, marketAvg, history, server}: ShopItemCardProps) {
 }
 
 /** Компактная карточка-строка для table-режима */
-function ShopItemRow({item, marketAvg, history}: Omit<ShopItemCardProps, 'server'>) {
+function ShopItemRow({item, marketAvg, sparkline}: Omit<ShopItemCardProps, 'server'>) {
     let vsMarket: string | null = null
     let vsClass = ''
     if (marketAvg && marketAvg > 0) {
@@ -156,7 +156,7 @@ function ShopItemRow({item, marketAvg, history}: Omit<ShopItemCardProps, 'server
             <td>{formatNumber(item.itemCount)}</td>
             <td>{formatNumber(item.price)}</td>
             <td className={vsClass}>{vsMarket ?? '—'}</td>
-            <td><Sparkline history={history} isSell={item.isSell}/></td>
+            <td><Sparkline sparkline={sparkline} isSell={item.isSell}/></td>
         </tr>
     )
 }
@@ -188,68 +188,54 @@ export function ShopProfilePage() {
 
     const validServer = PSHOP_SERVERS.includes(server as PShopServer)
 
-    const shop = useQuery({
-        queryKey: ['player-shop', server, pid],
-        queryFn: () => getPlayerShop(pid, server!),
+    // B1: единый запрос shop + player + botScore + spread[] + sparkline[] вместо 3 + 2×N.
+    const profile = useQuery({
+        queryKey: ['shop-profile-v2', server, pid],
+        queryFn: () => getShopProfile(server!, pid, { historyDays: 7, sparklinePoints: 24 }),
         enabled: validServer && !isNaN(pid),
     })
 
-    const botScore = useQuery({
-        queryKey: ['bot-score', server, pid],
-        queryFn: () => getBotScore(pid, server!),
-        enabled: validServer && !isNaN(pid),
-    })
-
+    // playerInfo даёт properties (классы/статы) — это не рыночные данные, остаётся отдельным запросом.
     const playerInfo = useQuery({
         queryKey: ['player-detail', server, pid],
         queryFn: () => getPlayerById(server!, pid, 'properties'),
         enabled: validServer && !isNaN(pid),
     })
 
-    const itemIds = useMemo(() => {
-        if (!shop.data) return []
-        return [...new Set(shop.data.items.map((i) => i.itemId))]
-    }, [shop.data])
-
-    const spreadQueries = useQueries({
-        queries: itemIds.map((itemId) => ({
-            queryKey: ['item-spread', server, itemId],
-            queryFn: () => getItemSpread(itemId, server!),
-            enabled: itemIds.length > 0,
-        })),
-    })
-
-    const historyQueries = useQueries({
-        queries: itemIds.map((itemId) => ({
-            queryKey: ['item-history', server, itemId, '7d'],
-            queryFn: () => getPriceHistory(itemId, server!, {from: daysAgoISO(7)}),
-            enabled: itemIds.length > 0,
-            staleTime: 5 * 60 * 1000,
-        })),
-    })
+    const shop = { data: profile.data?.shop, isLoading: profile.isLoading, error: profile.error }
+    const botScore = { data: profile.data?.botScore }
 
     const spreadMap = useMemo(() => {
         const map = new Map<number, { sell: number | null; buy: number | null }>()
-        spreadQueries.forEach((q) => {
-            if (q.data) {
-                map.set(q.data.itemId, {
-                    sell: q.data.sell?.min ?? null,
-                    buy: q.data.buy?.max ?? null,
-                })
-            }
+        profile.data?.items.forEach((row) => {
+            map.set(row.itemId, {
+                sell: row.spread.sell?.min ?? null,
+                buy: row.spread.buy?.max ?? null,
+            })
         })
         return map
-    }, [spreadQueries])
+    }, [profile.data])
 
-    const historyMap = useMemo(() => {
-        const map = new Map<number, PriceHistoryResponse | undefined>()
-        itemIds.forEach((id, idx) => {
-            map.set(id, historyQueries[idx]?.data)
+    const sparklineMap = useMemo(() => {
+        const map = new Map<number, SparklineData>()
+        profile.data?.items.forEach((row) => {
+            map.set(row.itemId, row.sparkline)
         })
         return map
-    }, [itemIds, historyQueries])
+    }, [profile.data])
 
-    const allItems = (shop.data?.items ?? []) as ShopItemExtended[]
+    const allItems: ShopItemExtended[] = useMemo(
+        () =>
+            (profile.data?.items ?? []).map((row) => ({
+                id: row.id,
+                itemId: row.itemId,
+                item: row.item,
+                itemCount: row.itemCount,
+                price: row.price,
+                isSell: row.isSell,
+            })),
+        [profile.data],
+    )
 
     const applyFilterAndSort = (items: ShopItemExtended[]): ShopItemExtended[] => {
         const q = search.trim().toLowerCase()
@@ -364,7 +350,7 @@ export function ShopProfilePage() {
                             key={`${item.itemId}-${item.isSell}-${item.id}`}
                             item={item}
                             marketAvg={(isSell ? spreadMap.get(item.itemId)?.sell : spreadMap.get(item.itemId)?.buy) ?? null}
-                            history={historyMap.get(item.itemId)}
+                            sparkline={sparklineMap.get(item.itemId)}
                         />
                     ))}
                     </tbody>
@@ -378,7 +364,7 @@ export function ShopProfilePage() {
                         key={`${item.itemId}-${item.isSell}-${item.id}`}
                         item={item}
                         marketAvg={(isSell ? spreadMap.get(item.itemId)?.sell : spreadMap.get(item.itemId)?.buy) ?? null}
-                        history={historyMap.get(item.itemId)}
+                        sparkline={sparklineMap.get(item.itemId)}
                         server={server!}
                     />
                 ))}
@@ -449,8 +435,8 @@ export function ShopProfilePage() {
                                 <span className={styles.metaChip}>{server}</span>
                                 {shop.data && (
                                     <span
-                                        className={`${styles.badge} ${shop.data.shop.isActive ? styles.badgeActive : styles.badgeInactive}`}>
-                                        {shop.data.shop.isActive ? '● Активен' : '○ Неактивен'}
+                                        className={`${styles.badge} ${shop.data.isActive ? styles.badgeActive : styles.badgeInactive}`}>
+                                        {shop.data.isActive ? '● Активен' : '○ Неактивен'}
                                     </span>
                                 )}
                             </div>
@@ -489,15 +475,15 @@ export function ShopProfilePage() {
                         <div className={styles.sideInfo}>
                             <div className={styles.sideInfoRow}>
                                 <span className={styles.sideInfoLabel}>Создан</span>
-                                <span className={styles.sideInfoValue}>{formatDate(shop.data.shop.createTime)}</span>
+                                <span className={styles.sideInfoValue}>{formatDate(shop.data.createTime)}</span>
                             </div>
                             <div className={styles.sideInfoRow}>
                                 <span className={styles.sideInfoLabel}>Замечен</span>
-                                <span className={styles.sideInfoValue}>{formatDate(shop.data.shop.firstSeenAt)}</span>
+                                <span className={styles.sideInfoValue}>{formatDate(shop.data.firstSeenAt)}</span>
                             </div>
                             <div className={styles.sideInfoRow}>
                                 <span className={styles.sideInfoLabel}>Активность</span>
-                                <span className={styles.sideInfoValue}>{formatDate(shop.data.shop.lastSeenAt)}</span>
+                                <span className={styles.sideInfoValue}>{formatDate(shop.data.lastSeenAt)}</span>
                             </div>
                         </div>
                     )}

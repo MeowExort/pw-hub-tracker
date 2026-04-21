@@ -52,6 +52,10 @@ export function ItemsPage() {
       isSell,
       minPrice: minPrice ? Number(minPrice) : undefined,
       maxPrice: maxPrice ? Number(maxPrice) : undefined,
+      // B4: sparkline приходит вместе с листингом — ItemTooltip не делает N отдельных запросов.
+      withSparkline: true,
+      sparklineDays: 30,
+      sparklinePoints: 24,
     }),
   })
 
@@ -147,6 +151,7 @@ export function ItemsPage() {
                         server={server}
                         name={item.name}
                         icon={item.icon ?? ''}
+                        sparkline={item.sparkline}
                       >
                         <Link to={`/items/${item.id}`} className={styles.itemLink}>
                           <img src={item.icon ?? ''} alt="" className={styles.itemIcon} />

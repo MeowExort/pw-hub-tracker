@@ -198,6 +198,10 @@ export interface ShopItemExtended {
   itemCount: number
   price: number
   isSell: boolean
+  /** Присутствует только при withItemSpread=true (B4). */
+  spread?: Spread
+  /** Присутствует только при withItemSparkline=true (B4). */
+  sparkline?: Sparkline
 }
 
 /** Магазин игрока со сводкой из /api/shops/{server} */
@@ -245,6 +249,13 @@ export interface ShopListResponse {
   items: ShopListItemExtended[]
   /** Может отсутствовать, пока бекенд не обновлён */
   summary?: ShopsListSummary
+  /** Присутствует, если в запросе указан hasItemId (B6). */
+  filterItem?: {
+    id: number
+    name: string
+    icon: string | null
+    nameColor: string
+  }
 }
 
 export type ShopsOrderBy =
@@ -295,6 +306,27 @@ export interface BotScoreResponse {
   events: BotEvent[]
 }
 
+/** Общий spread (sell/buy) — используется в v2-эндпоинтах и расширениях listing-ов. */
+export interface Spread {
+  sell: PriceStats | null
+  buy: PriceStats | null
+}
+
+/** Агрегированная точка sparkline — из v2-эндпоинтов и listing-расширений (B1/B2/B4). */
+export interface SparklinePoint {
+  ts: string
+  sellMedian: number | null
+  buyMedian: number | null
+}
+
+/** Облегчённая историческая траектория — альтернатива PriceHistoryResponse для tooltip/превью. */
+export interface Sparkline {
+  from: string
+  to: string
+  bucket: 'hour' | 'day'
+  points: SparklinePoint[]
+}
+
 /** Элемент грид предметов /api/pshop/items */
 export interface ItemSearchItem {
   id: number
@@ -302,6 +334,8 @@ export interface ItemSearchItem {
   icon: string | null
   sell: PriceStats | null
   buy: PriceStats | null
+  /** Присутствует только при withSparkline=true (B4). */
+  sparkline?: Sparkline
 }
 
 export interface ItemSearchResponse {
@@ -332,12 +366,18 @@ export interface GetItemsParams {
   pageSize?: number
   sortBy?: ItemsSortBy
   sortOrder?: 'asc' | 'desc'
+  /** B4: включить sparkline в каждый ItemSearchItem. */
+  withSparkline?: boolean
+  sparklineDays?: 7 | 14 | 30
+  sparklinePoints?: number
 }
 
 export function getItems(params: GetItemsParams) {
   return apiGet<ItemSearchResponse>('/api/pshop/items', {
     ...params,
     isSell: params.isSell !== undefined ? String(params.isSell) : undefined,
+    withSparkline:
+      params.withSparkline !== undefined ? String(params.withSparkline) : undefined,
   } as Record<string, string | number | undefined>)
 }
 
@@ -428,6 +468,12 @@ export interface GetShopsParams {
   minBuyMoney?: number
   maxBuyMoney?: number
   playerId?: number
+  /** B4: включить spread в каждый ShopItemExtended. */
+  withItemSpread?: boolean
+  /** B4: включить sparkline в каждый ShopItemExtended. */
+  withItemSparkline?: boolean
+  sparklineDays?: 7 | 14 | 30
+  sparklinePoints?: number
 }
 
 export function getShops(server: string, params?: GetShopsParams) {
@@ -448,6 +494,12 @@ export function getShops(server: string, params?: GetShopsParams) {
     minBuyMoney: params?.minBuyMoney,
     maxBuyMoney: params?.maxBuyMoney,
     playerId: params?.playerId,
+    withItemSpread:
+      params?.withItemSpread !== undefined ? String(params.withItemSpread) : undefined,
+    withItemSparkline:
+      params?.withItemSparkline !== undefined ? String(params.withItemSparkline) : undefined,
+    sparklineDays: params?.sparklineDays,
+    sparklinePoints: params?.sparklinePoints,
   }
   if (params?.shopType !== undefined) {
     query.shopType = Array.isArray(params.shopType)
@@ -482,5 +534,176 @@ export function getBots(server: string, params?: { days?: number; minEvents?: nu
 export function getBotScore(playerId: number, server: string, params?: { days?: number }) {
   return apiGet<BotScoreResponse>(`/api/pshop/players/${server}/${playerId}/bot-score`, {
     days: params?.days,
+  } as Record<string, string | number | undefined>)
+}
+
+/* ─── v2-агрегаты (B1/B2/B3/B5) ─── */
+
+/** Ответ B1: GET /api/pshop/v2/players/{server}/{playerId}/shop-profile */
+export interface ShopProfileResponse {
+  shop: ShopInfo
+  player: Player | null
+  botScore: {
+    totalEvents: number
+    events: BotEvent[]
+  }
+  items: Array<{
+    id: number
+    itemId: number
+    item: Item | null
+    itemCount: number
+    price: number
+    isSell: boolean
+    spread: Spread
+    sparkline: Sparkline
+  }>
+  truncated: boolean
+}
+
+export function getShopProfile(
+  server: string,
+  playerId: number,
+  params?: {
+    historyDays?: 7 | 14 | 30
+    sparklinePoints?: number
+    excludeOutliers?: boolean
+    itemsLimit?: number
+  },
+) {
+  return apiGet<ShopProfileResponse>(
+    `/api/pshop/v2/players/${server}/${playerId}/shop-profile`,
+    {
+      historyDays: params?.historyDays,
+      sparklinePoints: params?.sparklinePoints,
+      excludeOutliers:
+        params?.excludeOutliers !== undefined ? String(params.excludeOutliers) : undefined,
+      itemsLimit: params?.itemsLimit,
+    } as Record<string, string | number | undefined>,
+  )
+}
+
+/** Ответ B2: GET /api/pshop/v2/items/{itemId}/details */
+export type ItemDetailsHistoryItem =
+  | (PriceHistoryHourDetailed & { kind: 'hourly' })
+  | {
+      kind: 'daily'
+      day: string
+      isSell: boolean
+      minPrice: number
+      maxPrice: number
+      avgPrice: number
+      medianPrice: number
+      totalCount: number
+      shopCount: number
+    }
+
+export interface ItemDetailsResponse {
+  info: {
+    itemId: number
+    name: string
+    nameColor: string
+    icon: string | null
+    description: string | null
+    category: string | null
+    sell: PriceStats | null
+    buy: PriceStats | null
+    trendPrediction: TrendPrediction | null
+  }
+  history: {
+    granularity: 'hourly' | 'daily'
+    from: string
+    to: string
+    items: ItemDetailsHistoryItem[]
+  }
+  sellers: ItemDetailsOffersBlock
+  buyers: ItemDetailsOffersBlock
+}
+
+export interface ItemDetailsOffer {
+  shopId: number
+  playerId: number
+  player: Player | null
+  price: number
+  count: number
+  lastSeenAt: string
+  isActive: boolean
+}
+
+export interface ItemDetailsOffersBlock {
+  total: number
+  items: ItemDetailsOffer[]
+}
+
+export function getItemDetails(
+  itemId: number,
+  server: string,
+  params?: {
+    historyPeriod?: '7d' | '30d' | '90d' | '180d' | 'all'
+    offersLimit?: number
+    excludeOutliers?: boolean
+  },
+) {
+  return apiGet<ItemDetailsResponse>(`/api/pshop/v2/items/${itemId}/details`, {
+    server,
+    historyPeriod: params?.historyPeriod,
+    offersLimit: params?.offersLimit,
+    excludeOutliers:
+      params?.excludeOutliers !== undefined ? String(params.excludeOutliers) : undefined,
+  } as Record<string, string | number | undefined>)
+}
+
+/** Ответ B3: GET /api/pshop/v2/market/dashboard */
+export interface MarketDashboardResponse {
+  summary: MarketSummary
+  popular: {
+    sell: PopularItem[]
+    buy: PopularItem[]
+  }
+  trades: TradesSummary
+}
+
+export function getMarketDashboard(
+  server: string,
+  params?: {
+    popularLimit?: number
+    tradesPeriod?: '7d' | '30d' | '90d'
+    excludeOutliers?: boolean
+  },
+) {
+  return apiGet<MarketDashboardResponse>('/api/pshop/v2/market/dashboard', {
+    server,
+    popularLimit: params?.popularLimit,
+    tradesPeriod: params?.tradesPeriod,
+    excludeOutliers:
+      params?.excludeOutliers !== undefined ? String(params.excludeOutliers) : undefined,
+  } as Record<string, string | number | undefined>)
+}
+
+/** Ответ B5: GET /api/pshop/v2/trades/overview */
+export interface TradesOverviewResponse {
+  summary: TradesSummary
+  byItem: TradesByItemResponse
+}
+
+export function getTradesOverview(
+  server: string,
+  params: {
+    from: string
+    to: string
+    itemId?: number
+    page?: number
+    pageSize?: number
+    excludeOutliers?: boolean
+  },
+) {
+  return apiGet<TradesOverviewResponse>('/api/pshop/v2/trades/overview', {
+    server,
+    from: params.from,
+    to: params.to,
+    itemId: params.itemId,
+    page: params.page,
+    pageSize: params.pageSize,
+    excludeOutliers:
+      params.excludeOutliers !== undefined ? String(params.excludeOutliers) : undefined,
   } as Record<string, string | number | undefined>)
 }

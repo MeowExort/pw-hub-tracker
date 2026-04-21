@@ -56,6 +56,11 @@ const ACTIONS: RawAction[] = [
   ['getShopsItemsAutocomplete', 'GET', '/api/shops/:server/items-autocomplete', true, true],
   ['getBots', 'GET', '/api/pshop/bots', false, true],
   ['getBotScore', 'GET', '/api/pshop/players/:server/:playerId/bot-score', false, true],
+  // v2-агрегаты (B1/B2/B3/B5)
+  ['getShopProfile', 'GET', '/api/pshop/v2/players/:server/:playerId/shop-profile', false, true],
+  ['getItemDetails', 'GET', '/api/pshop/v2/items/:itemId/details', false, true],
+  ['getMarketDashboard', 'GET', '/api/pshop/v2/market/dashboard', false, true],
+  ['getTradesOverview', 'GET', '/api/pshop/v2/trades/overview', false, true],
   // players
   ['getPlayers', 'GET', '/api/players', true],
   ['getPlayerById', 'GET', '/api/arena/players/:server/:playerId'],

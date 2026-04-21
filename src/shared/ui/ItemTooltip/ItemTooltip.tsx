@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useCallback, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useQuery } from '@tanstack/react-query'
-import { getPriceHistory } from '@/shared/api/pshop'
+import { getPriceHistory, type Sparkline } from '@/shared/api/pshop'
 import { PriceHistoryChart } from '@/shared/ui/PriceHistoryChart'
+import { SparklineChart } from '@/shared/ui/SparklineChart'
 import { daysAgoISO, formatNumber } from '@/shared/utils/pshop'
 import styles from './ItemTooltip.module.scss'
 
@@ -14,10 +15,25 @@ interface ItemTooltipProps {
   nameColor?: string
   count?: number
   price?: number
+  /**
+   * Предрассчитанный sparkline из листинга (B4).
+   * Если передан — tooltip НЕ делает отдельный запрос getPriceHistory.
+   */
+  sparkline?: Sparkline
   children: ReactNode
 }
 
-export function ItemTooltip({ itemId, server, name, icon, nameColor, count, price, children }: ItemTooltipProps) {
+export function ItemTooltip({
+  itemId,
+  server,
+  name,
+  icon,
+  nameColor,
+  count,
+  price,
+  sparkline,
+  children,
+}: ItemTooltipProps) {
   const [visible, setVisible] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
@@ -44,10 +60,11 @@ export function ItemTooltip({ itemId, server, name, icon, nameColor, count, pric
     setVisible(false)
   }
 
+  // Fallback: если sparkline не передан, подтягиваем полную историю (старый путь).
   const { data: historyData, isLoading: isHistoryLoading } = useQuery({
     queryKey: ['item-price-history-tooltip', itemId, server],
     queryFn: () => getPriceHistory(itemId!, server!, { from: daysAgoISO(30) }),
-    enabled: visible && !!itemId && !!server,
+    enabled: visible && !!itemId && !!server && !sparkline,
     staleTime: 5 * 60 * 1000,
   })
 
@@ -107,7 +124,9 @@ export function ItemTooltip({ itemId, server, name, icon, nameColor, count, pric
           </div>
           {itemId && server && (
             <div className={styles.chartWrapper}>
-              {isHistoryLoading ? (
+              {sparkline ? (
+                <SparklineChart data={sparkline} height={80} mini />
+              ) : isHistoryLoading ? (
                 <div className={styles.loader}>Загрузка графика...</div>
               ) : historyData ? (
                 <PriceHistoryChart data={historyData} height={80} mini />
