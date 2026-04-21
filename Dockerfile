@@ -22,11 +22,11 @@ FROM node:20-alpine AS production
 WORKDIR /app
 
 # Зависимости BFF
-COPY server/package.json ./package.json
+COPY server/package.json server/package-lock.json* ./
 RUN npm install --omit=dev
 
 # Код BFF
-COPY server/index.js ./index.js
+COPY server/ ./
 
 # Собранный фронтенд (включая dist/.build-env)
 COPY --from=build /app/dist ./dist
