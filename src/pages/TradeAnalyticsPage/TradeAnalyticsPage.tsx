@@ -1,4 +1,5 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -58,7 +59,7 @@ export function TradeAnalyticsPage() {
 
   // Автокомплит
   const [itemSearch, setItemSearch] = useState('')
-  const deferredItemSearch = useDeferredValue(itemSearch.trim())
+  const deferredItemSearch = useDebouncedValue(itemSearch.trim())
   const [acOpen, setAcOpen] = useState(false)
   const acRef = useRef<HTMLDivElement>(null)
 

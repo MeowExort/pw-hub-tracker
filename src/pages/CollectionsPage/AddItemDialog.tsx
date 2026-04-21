@@ -1,4 +1,5 @@
-import { useState, useDeferredValue, useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue'
 import { useQuery } from '@tanstack/react-query'
 import { getItems, type PShopServer } from '@/shared/api/pshop'
 import { notifyTextInput } from '@/shared/security/behavior-tracker'
@@ -18,7 +19,7 @@ const PAGE_SIZE = 15
 /** Диалог поиска и добавления предметов в активную подборку. */
 export function AddItemDialog({ open, server, excludeIds, onClose, onAdd }: AddItemDialogProps) {
   const [search, setSearch] = useState('')
-  const deferred = useDeferredValue(search.trim())
+  const deferred = useDebouncedValue(search.trim())
   const excludeSet = new Set(excludeIds)
 
   useEffect(() => {

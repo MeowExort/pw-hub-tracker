@@ -1,4 +1,5 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
@@ -62,7 +63,7 @@ export function ShopsPage() {
 
   // Поиск: локальный input → deferred → URL
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '')
-  const deferredSearch = useDeferredValue(searchInput.trim())
+  const deferredSearch = useDebouncedValue(searchInput.trim())
 
   useEffect(() => {
     const next = new URLSearchParams(searchParams)
@@ -109,7 +110,7 @@ export function ShopsPage() {
 
   // --- Автокомплит предметов ---
   const [itemSearch, setItemSearch] = useState('')
-  const deferredItemSearch = useDeferredValue(itemSearch.trim())
+  const deferredItemSearch = useDebouncedValue(itemSearch.trim())
   const [acOpen, setAcOpen] = useState(false)
   const autocomplete = useQuery({
     queryKey: ['shops-items-autocomplete', server, deferredItemSearch],

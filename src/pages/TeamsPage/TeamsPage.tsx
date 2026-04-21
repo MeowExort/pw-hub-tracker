@@ -1,4 +1,5 @@
-import { useState, useDeferredValue, useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import { getTeams, searchTeams } from '@/shared/api/teams'
@@ -216,7 +217,7 @@ export function TeamsPage() {
     }, { replace: true })
   }
   const [searchInput, setSearchInput] = useState('')
-  const deferredSearch = useDeferredValue(searchInput.trim())
+  const deferredSearch = useDebouncedValue(searchInput.trim())
 
   const isSearchMode = deferredSearch.length > 0
 

@@ -1,4 +1,5 @@
-import { useState, useDeferredValue, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { getPlayers, getPlayerPropertiesMax } from '@/shared/api/players'
@@ -45,7 +46,7 @@ function formatDamageRange(low: number, high: number): string {
 export function PlayersPage() {
   const [page, setPage] = useState(1)
   const [searchInput, setSearchInput] = useState('')
-  const deferredSearch = useDeferredValue(searchInput.trim())
+  const deferredSearch = useDebouncedValue(searchInput.trim())
   const [server, setServer] = useState<string>('')
   const [cls, setCls] = useState<number | undefined>()
   const [sortBy, setSortBy] = useState<SortBy>('attackDegree')

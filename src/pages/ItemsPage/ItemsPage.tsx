@@ -1,4 +1,5 @@
-import { useState, useDeferredValue, useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams, Link } from 'react-router-dom'
 import { getItems, type GetItemsParams } from '@/shared/api/pshop'
@@ -19,7 +20,7 @@ export function ItemsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '')
-  const deferredSearch = useDeferredValue(searchInput.trim())
+  const deferredSearch = useDebouncedValue(searchInput.trim())
 
   const page = parseInt(searchParams.get('page') || '1', 10)
   const sortBy = (searchParams.get('sortBy') as GetItemsParams['sortBy']) || 'name'
