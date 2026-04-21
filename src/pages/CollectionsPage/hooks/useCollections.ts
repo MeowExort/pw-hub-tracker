@@ -14,6 +14,7 @@ export interface UseCollectionsApi {
   activeCollection: Collection | null
   setActiveCollection: (id: string) => void
   createCollection: (input: { name: string; icon?: string; color?: string }) => Collection
+  importCollection: (input: { name: string; icon?: string; color?: string; pinnedServer?: Collection['pinnedServer']; items: CollectionItem[] }) => Collection
   updateCollection: (id: string, patch: Partial<Omit<Collection, 'id' | 'createdAt' | 'isDefault'>>) => void
   duplicateCollection: (id: string) => Collection | null
   deleteCollection: (id: string) => void
@@ -73,6 +74,41 @@ export function useCollections(): UseCollectionsApi {
         c.id === id ? { ...c, ...patch, updatedAt: Date.now() } : c,
       ),
     }))
+  }, [])
+
+  const importCollection = useCallback<UseCollectionsApi['importCollection']>((input) => {
+    const now = Date.now()
+    const baseName = input.name.trim() || 'Импорт подборки'
+    let collection: Collection = {
+      id: generateId(),
+      name: baseName,
+      icon: input.icon,
+      color: input.color,
+      pinnedServer: input.pinnedServer,
+      isDefault: false,
+      items: input.items.map((it) => ({ ...it })),
+      createdAt: now,
+      updatedAt: now,
+    }
+    setState((s) => {
+      // Если имя занято — добавим суффикс «(импорт)», «(импорт 2)» и т.д.
+      const names = new Set(s.collections.map((c) => c.name))
+      if (names.has(collection.name)) {
+        let candidate = `${baseName} (импорт)`
+        let i = 2
+        while (names.has(candidate)) {
+          candidate = `${baseName} (импорт ${i})`
+          i++
+        }
+        collection = { ...collection, name: candidate }
+      }
+      return {
+        ...s,
+        collections: [...s.collections, collection],
+        activeCollectionId: collection.id,
+      }
+    })
+    return collection
   }, [])
 
   const duplicateCollection = useCallback<UseCollectionsApi['duplicateCollection']>((id) => {
@@ -209,6 +245,7 @@ export function useCollections(): UseCollectionsApi {
     activeCollection,
     setActiveCollection,
     createCollection,
+    importCollection,
     updateCollection,
     duplicateCollection,
     deleteCollection,

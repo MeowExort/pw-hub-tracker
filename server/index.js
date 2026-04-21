@@ -28,6 +28,19 @@ import {
 import { difficultyForScore, POW_MIN_DIFFICULTY } from './dynamic-pow.js'
 import { issueSessionToken, verifySessionToken } from './session-token.js'
 import { lookupAsn } from './asn-lookup.js'
+import {
+  getVapidPublicKey,
+  addSubscription,
+  removeSubscription,
+  notifyUser,
+} from './push.js'
+import {
+  listAlerts,
+  createAlert,
+  deleteAlert,
+} from './alerts.js'
+import { startAlertsWorker } from './alerts-worker.js'
+import { createShare, readShare } from './share.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -59,6 +72,9 @@ const API_TARGET = process.env.API_TARGET || 'https://api.tracker.pw-hub.ru'
 const API_KEY = process.env.API_KEY || process.env.VITE_API_KEY || ''
 const HCAPTCHA_SECRET = process.env.HCAPTCHA_SECRET || ''
 const SITE_URL = process.env.SITE_URL || 'https://tracker.pw-hub.ru'
+// URL фронтенда (Vite dev-server) для dev-режима. В prod не задаётся —
+// тогда короткие ссылки указывают на origin BFF и SPA раздаётся из dist/.
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5174'
 
 const buildSalt = process.env.BUILD_SALT || buildEnv.BUILD_SALT || ''
 const signingSecret = process.env.SIGNING_SECRET || buildEnv.SIGNING_SECRET || ''
@@ -486,6 +502,148 @@ app.post('/api/session', (req, res) => {
   return res.json({ token, exp })
 })
 
+// --- Push / Alerts ---
+//
+// Отдельный контур BFF: не проксирует в апстрим, работает с хранилищами
+// подписок (`push.js`) и таргет-алертов (`alerts.js`) — основное хранилище
+// Redis (см. `./redis.js`), с in-memory fallback при недоступности. Запросы идентифицируются
+// по заголовку `X-User-Id` — стабильному идентификатору клиента (генерится и
+// хранится в localStorage на фронте). Подпись/PoW не требуются: эндпоинты не
+// раскрывают данные других пользователей.
+
+function getUserId(req) {
+  const raw = req.headers['x-user-id']
+  if (typeof raw !== 'string') return ''
+  // Жёсткая санитизация: только URL-safe base64 / шестнадцатеричный id, 8..128 символов.
+  if (!/^[A-Za-z0-9_-]{8,128}$/.test(raw)) return ''
+  return raw
+}
+
+/** Публичный VAPID-ключ для подписки на push в браузере. */
+app.get('/api/push/vapid-public', (_req, res) => {
+  res.json({ key: getVapidPublicKey() })
+})
+
+/** Регистрация push-подписки пользователя. */
+app.post('/api/push/subscribe', async (req, res) => {
+  const userId = getUserId(req)
+  if (!userId) return res.status(400).json({ error: 'X-User-Id required' })
+  const sub = req.body?.subscription
+  if (!sub?.endpoint || !sub?.keys?.p256dh || !sub?.keys?.auth) {
+    return res.status(400).json({ error: 'Некорректная PushSubscription' })
+  }
+  await addSubscription(userId, sub)
+  res.json({ ok: true })
+})
+
+/** Отписка (по endpoint). */
+app.delete('/api/push/subscribe', async (req, res) => {
+  const userId = getUserId(req)
+  if (!userId) return res.status(400).json({ error: 'X-User-Id required' })
+  const endpoint = req.body?.endpoint || req.query?.endpoint
+  if (!endpoint) return res.status(400).json({ error: 'endpoint required' })
+  await removeSubscription(userId, String(endpoint))
+  res.json({ ok: true })
+})
+
+/** Список алертов пользователя. */
+app.get('/api/alerts', async (req, res) => {
+  const userId = getUserId(req)
+  if (!userId) return res.status(400).json({ error: 'X-User-Id required' })
+  res.json({ items: await listAlerts(userId) })
+})
+
+/** Создать алерт. */
+app.post('/api/alerts', async (req, res) => {
+  const userId = getUserId(req)
+  if (!userId) return res.status(400).json({ error: 'X-User-Id required' })
+  const b = req.body || {}
+  if (!Number.isFinite(+b.itemId) || !b.server || !Number.isFinite(+b.targetPrice)) {
+    return res.status(400).json({ error: 'itemId/server/targetPrice обязательны' })
+  }
+  const alert = await createAlert(userId, b)
+  res.status(201).json(alert)
+})
+
+/** Удалить алерт. */
+app.delete('/api/alerts/:id', async (req, res) => {
+  const userId = getUserId(req)
+  if (!userId) return res.status(400).json({ error: 'X-User-Id required' })
+  const ok = await deleteAlert(userId, req.params.id)
+  if (!ok) return res.status(404).json({ error: 'not found' })
+  res.json({ ok: true })
+})
+
+/** Отправить тестовое push-уведомление (для проверки разрешений). */
+app.post('/api/alerts/test', async (req, res) => {
+  const userId = getUserId(req)
+  if (!userId) return res.status(400).json({ error: 'X-User-Id required' })
+  const result = await notifyUser(userId, {
+    title: 'PW Hub — тестовое уведомление',
+    body: 'Если вы это видите — push работает ✅',
+    icon: '/icon-192x192.png',
+    url: '/collections',
+    itemId: 0,
+    server: 'test',
+  })
+  res.json(result)
+})
+
+/**
+ * Публичные короткие ссылки для экспорта/импорта подборок.
+ *
+ * POST /api/share  { kind: 'collection', payload: {...} }  → { code, url, expiresAt }
+ * GET  /api/share/:code                                    → { kind, payload, expiresAt }
+ *
+ * Не требуют userId/подписи/PoW: это именно публичная шара по короткому коду.
+ * Ограничения: payload JSON до 64 KiB, TTL ≤ 30 дней.
+ */
+app.post('/api/share', async (req, res) => {
+  try {
+    const b = req.body || {}
+    const kind = b.kind ?? 'collection'
+    if (kind !== 'collection') {
+      return res.status(400).json({ error: 'unsupported kind' })
+    }
+    if (!b.payload || typeof b.payload !== 'object') {
+      return res.status(400).json({ error: 'payload required' })
+    }
+    const { code, expiresAt } = await createShare({ kind, payload: b.payload, ttlMs: b.ttlMs })
+    // В dev фронт живёт на Vite (FRONTEND_URL), в prod — на origin BFF.
+    let base
+    if (FRONTEND_URL) {
+      base = FRONTEND_URL.replace(/\/$/, '')
+    } else {
+      const host = req.headers['x-forwarded-host'] || req.headers.host
+      const proto = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http')
+      base = host ? `${proto}://${host}` : SITE_URL
+    }
+    res.status(201).json({
+      code,
+      expiresAt,
+      url: `${base}/c/${code}`,
+    })
+  } catch (e) {
+    const msg = e && e.message ? String(e.message) : 'bad request'
+    res.status(400).json({ error: msg })
+  }
+})
+
+app.get('/api/share/:code', async (req, res) => {
+  const code = String(req.params.code || '')
+  if (!/^[A-Za-z0-9]{4,16}$/.test(code)) {
+    return res.status(400).json({ error: 'invalid code' })
+  }
+  const entry = await readShare(code)
+  if (!entry) return res.status(404).json({ error: 'not found or expired' })
+  res.json({
+    code: entry.code,
+    kind: entry.kind,
+    payload: entry.payload,
+    expiresAt: entry.expiresAt,
+  })
+})
+
 // BFF Proxy
 app.post('/api/proxy', async (req, res) => {
   try {
@@ -675,12 +833,41 @@ app.post('/api/proxy', async (req, res) => {
   }
 })
 
+// --- Короткие ссылки на подборки: /c/:code → SPA с ?share=<code> ---
+// В dev (pnpm dev) фронт запущен на Vite (обычно http://localhost:5174),
+// поэтому редиректим туда, если задан FRONTEND_URL. В prod редиректим на
+// текущий origin — SPA на /collections подхватит параметр ?share.
+app.get('/c/:code', (req, res) => {
+  const code = String(req.params.code || '')
+  if (!/^[A-Za-z0-9]{4,16}$/.test(code)) {
+    return res.status(400).send('Invalid share code')
+  }
+  const base = FRONTEND_URL || `${req.protocol}://${req.get('host')}`
+  const target = `${base.replace(/\/$/, '')}/collections?share=${encodeURIComponent(code)}`
+  res.redirect(302, target)
+})
+
 // --- Статика ---
 const distPath = path.resolve(__dirname, 'dist')
 app.use(express.static(distPath, { index: false }))
 app.get('*', (req, res) => {
-  res.sendFile(path.join(distPath, 'index.html'))
+  res.sendFile(path.join(distPath, 'index.html'), (err) => {
+    if (err) {
+      // В dev-режиме фронт раздаётся Vite-ом, dist/index.html может
+      // отсутствовать. Если задан FRONTEND_URL — редиректим туда.
+      if (FRONTEND_URL) {
+        const target = `${FRONTEND_URL.replace(/\/$/, '')}${req.originalUrl}`
+        return res.redirect(302, target)
+      }
+      res.status(404).send(
+        'Фронтенд не собран (dist/index.html отсутствует). ' +
+          'Запустите `pnpm build` или откройте Vite dev-server напрямую.',
+      )
+    }
+  })
 })
+
+startAlertsWorker({ apiTarget: API_TARGET, apiKey: API_KEY })
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[BFF] Сервер запущен: http://0.0.0.0:${PORT}`)

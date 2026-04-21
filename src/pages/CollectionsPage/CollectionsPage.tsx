@@ -4,11 +4,15 @@ import { ServerSelector } from '@/shared/ui/ServerSelector'
 import type { Collection, CollectionItem } from '@/shared/collections'
 import { CollectionsSidebar } from './CollectionsSidebar'
 import { CollectionEditorDialog } from './CollectionEditorDialog'
+import { CollectionShareDialog } from './CollectionShareDialog'
+import { CollectionImportDialog, type ImportResult } from './CollectionImportDialog'
 import { CollectionsToolbar, type CollectionFilter, type CollectionPriceSide, type CollectionSortBy, type CollectionSortOrder, type CollectionViewMode } from './CollectionsToolbar'
 import { CollectionItemCard } from './CollectionItemCard'
 import { AddItemDialog } from './AddItemDialog'
+import { ItemAlertDialog } from './ItemAlertDialog'
 import { useCollections } from './hooks/useCollections'
 import { useCollectionItems } from './hooks/useCollectionItems'
+import { listAlerts, type AlertDTO } from '@/shared/api/pushAlerts'
 import styles from './CollectionsPage.module.scss'
 
 interface UndoToast {
@@ -24,6 +28,7 @@ export function CollectionsPage() {
     activeCollection,
     setActiveCollection,
     createCollection,
+    importCollection,
     updateCollection,
     duplicateCollection,
     deleteCollection,
@@ -31,13 +36,32 @@ export function CollectionsPage() {
     resetDefaults,
     addItem,
     removeItem,
+    updateItem,
   } = useCollections()
 
   const [editorOpen, setEditorOpen] = useState(false)
   const [editorTarget, setEditorTarget] = useState<Collection | null>(null)
+  const [shareTarget, setShareTarget] = useState<Collection | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
+  const [importInitialCode, setImportInitialCode] = useState<string | null>(null)
   const [confirmResetOpen, setConfirmResetOpen] = useState(false)
   const [undoToast, setUndoToast] = useState<UndoToast | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+  const [alertTargetId, setAlertTargetId] = useState<number | null>(null)
+  const [alerts, setAlerts] = useState<AlertDTO[]>([])
+
+  const reloadAlerts = async () => {
+    try {
+      const { items } = await listAlerts()
+      setAlerts(items)
+    } catch {
+      /* noop */
+    }
+  }
+
+  useEffect(() => {
+    void reloadAlerts()
+  }, [])
 
   // Параметры тулбара
   const [search, setSearch] = useState('')
@@ -78,6 +102,34 @@ export function CollectionsPage() {
 
   const openCreate = () => { setEditorTarget(null); setEditorOpen(true) }
   const openEdit = (c: Collection) => { setEditorTarget(c); setEditorOpen(true) }
+
+  // Автооткрытие импорта по ?share=<code> / ?c=<code>
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('share') || params.get('c')
+    if (code && /^[A-Za-z0-9]{4,16}$/.test(code)) {
+      setImportInitialCode(code)
+      setImportOpen(true)
+      // убираем параметр из URL, чтобы не открывалось повторно
+      params.delete('share')
+      params.delete('c')
+      const qs = params.toString()
+      window.history.replaceState({}, '', window.location.pathname + (qs ? `?${qs}` : ''))
+    }
+  }, [])
+
+  const handleImport = (r: ImportResult) => {
+    const created = importCollection({
+      name: r.name,
+      icon: r.icon,
+      color: r.color,
+      pinnedServer: r.pinnedServer,
+      items: r.items,
+    })
+    setImportOpen(false)
+    setImportInitialCode(null)
+    setUndoToast({ message: `Подборка «${created.name}» импортирована`, until: Date.now() + 4000 })
+  }
 
   const handleSubmit = (data: { name: string; icon?: string; color?: string }) => {
     if (editorTarget) updateCollection(editorTarget.id, data)
@@ -157,6 +209,8 @@ export function CollectionsPage() {
           onDuplicate={(c) => duplicateCollection(c.id)}
           onDelete={handleDelete}
           onResetDefaults={() => setConfirmResetOpen(true)}
+          onShare={(c) => setShareTarget(c)}
+          onImport={() => { setImportInitialCode(null); setImportOpen(true) }}
         />
 
         <section className={styles.content}>
@@ -209,7 +263,9 @@ export function CollectionsPage() {
                   view={view}
                   priceSide={priceSide}
                   isLoading={isLoading}
+                  alerts={alerts.filter((a) => a.itemId === entry.itemId && a.server === server)}
                   onRemove={(id) => removeItem(activeCollection.id, id)}
+                  onConfigureAlert={(id) => setAlertTargetId(id)}
                 />
               ))
             )}
@@ -224,6 +280,21 @@ export function CollectionsPage() {
         onSubmit={handleSubmit}
       />
 
+      {shareTarget && (
+        <CollectionShareDialog
+          collection={shareTarget}
+          onClose={() => setShareTarget(null)}
+        />
+      )}
+
+      {importOpen && (
+        <CollectionImportDialog
+          initialCode={importInitialCode}
+          onClose={() => { setImportOpen(false); setImportInitialCode(null) }}
+          onImport={handleImport}
+        />
+      )}
+
       <AddItemDialog
         open={addOpen && !!activeCollection}
         server={server}
@@ -231,6 +302,20 @@ export function CollectionsPage() {
         onClose={() => setAddOpen(false)}
         onAdd={(itemId) => {
           if (activeCollection) addItem(activeCollection.id, { itemId })
+        }}
+      />
+
+      <ItemAlertDialog
+        open={alertTargetId != null && !!activeCollection}
+        server={server}
+        entry={
+          activeCollection?.items.find((it) => it.itemId === alertTargetId) ?? null
+        }
+        itemName={alertTargetId != null ? data?.items[alertTargetId]?.info.name : undefined}
+        onClose={() => { setAlertTargetId(null); void reloadAlerts() }}
+        onUpdateLocal={(patch) => {
+          if (!activeCollection || alertTargetId == null) return
+          updateItem(activeCollection.id, alertTargetId, patch)
         }}
       />
 

@@ -247,6 +247,22 @@ export default defineConfig(({ command }) => ({
         target: process.env.VITE_BFF_URL || 'http://localhost:3000',
         changeOrigin: true,
       },
+      '/api/session': {
+        target: process.env.VITE_BFF_URL || 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/api/push': {
+        target: process.env.VITE_BFF_URL || 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/api/alerts': {
+        target: process.env.VITE_BFF_URL || 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/api/share': {
+        target: process.env.VITE_BFF_URL || 'http://localhost:3000',
+        changeOrigin: true,
+      },
     },
   },
 }))

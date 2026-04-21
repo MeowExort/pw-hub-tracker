@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { PShopServer } from '@/shared/api/pshop'
+import type { AlertDTO } from '@/shared/api/pushAlerts'
 import type { CollectionItem } from '@/shared/collections'
 import type { CollectionItemData } from './hooks/useCollectionItems'
 import { ItemTooltip } from '@/shared/ui/ItemTooltip'
@@ -15,6 +16,7 @@ export interface CollectionItemCardProps {
   view: CollectionViewMode
   priceSide: CollectionPriceSide
   isLoading: boolean
+  alerts?: AlertDTO[]
   onRemove: (itemId: number) => void
   onEditNote?: (itemId: number) => void
   onConfigureAlert?: (itemId: number) => void
@@ -28,11 +30,27 @@ export function CollectionItemCard({
   view,
   priceSide,
   isLoading,
+  alerts,
   onRemove,
   onEditNote,
   onConfigureAlert,
 }: CollectionItemCardProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const menuBtnRef = useRef<HTMLButtonElement | null>(null)
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const onDocClick = (e: MouseEvent) => {
+      const target = e.target as Node | null
+      if (!target) return
+      if (menuRef.current && menuRef.current.contains(target)) return
+      if (menuBtnRef.current && menuBtnRef.current.contains(target)) return
+      setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [menuOpen])
 
   if (!details && isLoading) {
     return <div className={`${styles.card} ${styles.cardSkeleton}`} aria-busy="true" />
@@ -55,7 +73,7 @@ export function CollectionItemCard({
   const sidePrice = priceSide === 'sell' ? side?.min : side?.max
   const oppositePrice = priceSide === 'sell' ? opposite?.max : opposite?.min
 
-  const reached = isTargetReached(entry, details)
+  const targets = buildTargets(entry, alerts)
 
   const viewCls =
     view === 'list' ? styles.cardList : view === 'compact' ? styles.cardCompact : ''
@@ -83,6 +101,7 @@ export function CollectionItemCard({
 
         <button
           type="button"
+          ref={menuBtnRef}
           className={styles.cardMenuBtn}
           onClick={(e) => {
             e.stopPropagation()
@@ -93,7 +112,7 @@ export function CollectionItemCard({
           ⋮
         </button>
         {menuOpen && (
-          <div className={styles.cardMenu} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.cardMenu} ref={menuRef} onClick={(e) => e.stopPropagation()}>
             {onConfigureAlert && (
               <button onClick={() => { setMenuOpen(false); onConfigureAlert(info.itemId) }}>
                 🔔 Настроить алерт
@@ -117,6 +136,30 @@ export function CollectionItemCard({
         )}
       </div>
 
+      {targets.length > 0 && (
+        <div className={styles.cardTargets}>
+          {targets.map((t, i) => {
+            const reached = isTargetReached(t.side, t.price, details, t.direction)
+            const sideShort = t.side === 'sell' ? 'Прод' : 'Скуп'
+            return (
+              <div
+                key={t.key ?? i}
+                className={`${styles.cardTarget} ${reached ? styles.cardTargetReached : ''}`}
+                title={`${t.side === 'sell' ? 'Продажа' : 'Скупка'} ${t.direction} ${formatNumber(t.price)}`}
+              >
+                <span className={styles.cardTargetBell} aria-hidden>🔔</span>
+                <span className={styles.cardTargetText}>
+                  {sideShort} {t.direction} {formatNumber(t.price)}
+                </span>
+                {reached && <span className={styles.cardTargetCheck} aria-hidden>✓</span>}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {entry.note && <div className={styles.cardNote} title={entry.note}>📝 {entry.note}</div>}
+
       <div className={styles.cardPrices}>
         <div className={styles.cardPriceMain}>
           <span className={styles.cardPriceLabel}>
@@ -132,23 +175,42 @@ export function CollectionItemCard({
         </div>
       </div>
 
-      {entry.targetPrice != null && (
-        <div className={`${styles.cardTarget} ${reached ? styles.cardTargetReached : ''}`}>
-          🎯 Таргет: {formatNumber(entry.targetPrice)}
-          {reached && ' ✓'}
-        </div>
-      )}
-
-      {entry.note && <div className={styles.cardNote}>📝 {entry.note}</div>}
     </div>
   )
 }
 
 /** Достигнут ли пользовательский таргет для выбранной стороны. */
-function isTargetReached(entry: CollectionItem, details: CollectionItemData): boolean {
-  if (entry.targetPrice == null) return false
-  const side = entry.targetSide ?? 'sell'
+function isTargetReached(
+  side: 'sell' | 'buy',
+  target: number,
+  details: CollectionItemData,
+  direction: '<=' | '>=' = side === 'sell' ? '<=' : '>=',
+): boolean {
   const price = side === 'sell' ? details.info.sell?.min : details.info.buy?.max
   if (price == null) return false
-  return side === 'sell' ? price <= entry.targetPrice : price >= entry.targetPrice
+  return direction === '<=' ? price <= target : price >= target
+}
+
+interface TargetView {
+  key?: string
+  side: 'sell' | 'buy'
+  price: number
+  direction: '<=' | '>='
+}
+
+/** Собирает список отображаемых таргетов: серверные алерты имеют приоритет, иначе локальный fallback. */
+function buildTargets(entry: CollectionItem, alerts?: AlertDTO[]): TargetView[] {
+  if (alerts && alerts.length > 0) {
+    return alerts.map((a) => ({
+      key: a.id,
+      side: a.side,
+      price: a.targetPrice,
+      direction: a.direction,
+    }))
+  }
+  if (entry.targetPrice != null) {
+    const side = entry.targetSide ?? 'sell'
+    return [{ side, price: entry.targetPrice, direction: side === 'sell' ? '<=' : '>=' }]
+  }
+  return []
 }

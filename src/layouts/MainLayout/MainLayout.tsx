@@ -41,9 +41,10 @@ export function MainLayout() {
                             label="Рынок"
                             items={[
                                 { to: '/market', label: 'Дашборд' },
+                                { to: '/collections', label: 'Подборки' },
                                 { to: '/shops', label: 'Магазины' },
                                 { to: '/items', label: 'Предметы' },
-                                { to: '/collections', label: 'Подборки' },
+                                { to: '/alerts', label: 'Алерты' },
                                 { to: '/trades', label: 'Аналитика сделок' },
                                 { to: '/bots', label: 'Детектор ботов' },
                             ]}
