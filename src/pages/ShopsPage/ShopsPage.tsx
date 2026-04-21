@@ -18,6 +18,7 @@ import { Pagination } from '@/shared/ui/Pagination'
 import { formatDate, formatNumber } from '@/shared/utils/pshop'
 import { PlayerTooltip } from '@/shared/ui/PlayerTooltip'
 import { ItemTooltip } from '@/shared/ui/ItemTooltip'
+import { notifyTextInput } from '@/shared/security/behavior-tracker'
 import styles from './ShopsPage.module.scss'
 
 const PAGE_SIZE = 15
@@ -205,7 +206,7 @@ export function ShopsPage() {
               type="text"
               placeholder="Поиск по имени игрока…"
               value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
+              onChange={(e) => { notifyTextInput(searchInput.length, e.target.value.length); setSearchInput(e.target.value) }}
             />
           </div>
 

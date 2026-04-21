@@ -85,8 +85,8 @@ export function PriceHistoryChart({ data, height = 300, mini = false }: PriceHis
       const day = 'day' in item ? item.day : undefined
       const label = day ? new Date(day).toLocaleDateString() : (item.hour ? new Date(item.hour).toLocaleString() : '')
 
-      const sell = item.isSell ? item.minPrice : findNearest(time, sellItems, item.isSell)
-      const buy = !item.isSell ? item.maxPrice : findNearest(time, buyItems, item.isSell)
+      const sell = item.isSell ? item.minPrice : findNearest(time, sellItems, !item.isSell)
+      const buy = !item.isSell ? item.maxPrice : findNearest(time, buyItems, !item.isSell)
 
       return {
         time: timeStr,

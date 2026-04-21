@@ -11,6 +11,8 @@ import { requestCaptcha, consumeCaptchaToken } from '@/shared/security/captcha'
 import { solveChallenge } from '@/shared/security/pow'
 import { getFingerprint } from '@/shared/security/fingerprint'
 import { resolveRoute } from '@/shared/security/actions'
+import { getBehaviorHeader } from '@/shared/security/behavior-tracker'
+import { getSessionToken, peekSessionToken, clearSessionToken } from '@/shared/security/session-token'
 
 /** Ошибка API с HTTP-статусом */
 export class ApiError extends Error {
@@ -53,7 +55,12 @@ interface PowSolution {
 }
 
 async function obtainPowSolution(): Promise<PowSolution> {
-  const res = await fetch('/api/pow-challenge', { method: 'GET' })
+  const res = await fetch('/api/pow-challenge', {
+    method: 'GET',
+    headers: {
+      'X-Client-FP': getFingerprint(),
+    },
+  })
   if (!res.ok) throw new ApiError(res.status, `Не удалось получить PoW challenge: ${res.status}`)
   const { challenge, difficulty } = (await res.json()) as PowChallengeResponse
   const nonce = await solveChallenge(challenge, difficulty)
@@ -66,17 +73,22 @@ async function sendProxyRequest<T>(
   signal?: AbortSignal,
   captchaToken?: string,
   pow?: PowSolution,
+  sessionToken?: string | null,
 ): Promise<T> {
   const token = captchaToken || consumeCaptchaToken()
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'X-Client-FP': getFingerprint(),
+    'X-Behavior': getBehaviorHeader(),
   }
   if (token) headers['X-Captcha-Token'] = token
   if (pow) {
     headers['X-PoW-Challenge'] = pow.challenge
     headers['X-PoW-Nonce'] = pow.nonce
   }
+  // Сессионный токен (задача 5) — прикрепляем, если доступен.
+  const session = sessionToken === undefined ? peekSessionToken() : sessionToken
+  if (session) headers['X-Session'] = session
 
   const res = await fetch('/api/proxy', {
     method: 'POST',
@@ -127,14 +139,22 @@ export async function proxyRequest<T>(
   }
   limiter?.recordRequest()
 
-  const [signedRequest, powSolution] = await Promise.all([
+  // Параллельно: подпись, PoW и session token (если нет в кэше — получаем).
+  const [signedRequest, powSolution, sessionToken] = await Promise.all([
     createSignedRequest(actionId, fullParams),
     obtainPowSolution(),
+    getSessionToken(),
   ])
   if (isSearch) signedRequest.search = true
 
   try {
-    const result = await sendProxyRequest<T>(signedRequest, signal, undefined, powSolution)
+    const result = await sendProxyRequest<T>(
+      signedRequest,
+      signal,
+      undefined,
+      powSolution,
+      sessionToken,
+    )
     limiter?.handleSuccess()
     return result
   } catch (error) {
@@ -153,6 +173,11 @@ export async function proxyRequest<T>(
       throw new RateLimitError(retryAfterSec ? Number(retryAfterSec) * 1000 : 1000)
     }
 
+    // Бан или невалидная сессия — сбрасываем кэш токена.
+    if (error instanceof ApiError && error.status === 403) {
+      clearSessionToken()
+    }
+
     // CAPTCHA-эскалация возможна только для рыночных действий.
     if (isMarket && error instanceof ApiError && error.status === 403) {
       let isCaptcha = false
@@ -166,7 +191,8 @@ export async function proxyRequest<T>(
         const retryRequest = await createSignedRequest(actionId, fullParams)
         if (isSearch) retryRequest.search = true
         const retryPow = await obtainPowSolution()
-        return sendProxyRequest<T>(retryRequest, signal, captchaToken, retryPow)
+        const retrySession = await getSessionToken()
+        return sendProxyRequest<T>(retryRequest, signal, captchaToken, retryPow, retrySession)
       }
     }
 

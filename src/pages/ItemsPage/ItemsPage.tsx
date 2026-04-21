@@ -9,6 +9,7 @@ import { ErrorMessage } from '@/shared/ui/ErrorMessage'
 import { Pagination } from '@/shared/ui/Pagination'
 import { ItemTooltip } from '@/shared/ui/ItemTooltip'
 import { formatNumber } from '@/shared/utils/pshop'
+import { notifyTextInput } from '@/shared/security/behavior-tracker'
 import styles from './ItemsPage.module.scss'
 
 const PAGE_SIZE = 15
@@ -84,7 +85,7 @@ export function ItemsPage() {
             type="text"
             placeholder="Поиск предметов..."
             value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            onChange={(e) => { notifyTextInput(searchInput.length, e.target.value.length); setSearchInput(e.target.value) }}
             className={styles.searchInput}
           />
         </div>

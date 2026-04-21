@@ -13,6 +13,7 @@ import { getClassName, getClassIcon, formatDateTime } from '@/shared/utils/forma
 import { PlayerTooltip } from '@/shared/ui/PlayerTooltip'
 import { TeamTooltip } from '@/shared/ui/TeamTooltip'
 import { BuffIndicator } from '@/shared/ui/BuffIndicator'
+import { notifyTextInput } from '@/shared/security/behavior-tracker'
 import styles from './PlayersPage.module.scss'
 
 const PAGE_SIZE = 20
@@ -209,7 +210,7 @@ export function PlayersPage() {
             type="text"
             placeholder="Поиск по нику…"
             value={searchInput}
-            onChange={(e) => { setSearchInput(e.target.value); setPage(1) }}
+            onChange={(e) => { notifyTextInput(searchInput.length, e.target.value.length); setSearchInput(e.target.value); setPage(1) }}
           />
           <select
             className={styles.select}

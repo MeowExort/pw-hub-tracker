@@ -15,6 +15,19 @@ import { createHash, createHmac, timingSafeEqual } from 'crypto'
 import { readFileSync } from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import {
+  scoreRisk,
+  markWarmupVisit,
+  hasWarmupVisit,
+  isFreshFingerprint,
+  recordRequestForEntropy,
+  getEntropyStats,
+  isBanned,
+  addBan,
+} from './risk-scorer.js'
+import { difficultyForScore, POW_MIN_DIFFICULTY } from './dynamic-pow.js'
+import { issueSessionToken, verifySessionToken } from './session-token.js'
+import { lookupAsn } from './asn-lookup.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -195,21 +208,36 @@ class ServerRateLimiter {
           captchaRequired: false,
         }
       }
-      if (sc / RATE_LIMITS.searchPerMinute >= 0.9) {
-        return { limited: false, retryAfterSec: 0, slowdownMs: 0, captchaRequired: true }
-      }
+      // ВАЖНО: убран авто-триггер CAPTCHA на 90% search-лимита — заменён
+      // на risk-score эскалацию (см. `/api/proxy`).
     }
 
     let slowdownMs = 0
-    let captchaRequired = false
     const ratio = ipCount / RATE_LIMITS.ipPerMinute
     if (ratio >= RATE_LIMITS.slowdownThreshold) {
       const over = (ratio - RATE_LIMITS.slowdownThreshold) / (1 - RATE_LIMITS.slowdownThreshold)
       slowdownMs = Math.round(over * RATE_LIMITS.maxSlowdownMs)
     }
-    if (ratio >= 0.9) captchaRequired = true
+    // ВАЖНО: убран авто-триггер CAPTCHA на 90% IP-лимита — аналогично.
 
-    return { limited: false, retryAfterSec: 0, slowdownMs, captchaRequired }
+    return { limited: false, retryAfterSec: 0, slowdownMs, captchaRequired: false }
+  }
+
+  /** Доли от лимитов (для risk-scorer). */
+  getRatios(ip, fp, isSearch) {
+    const now = Date.now()
+    const ipCount = this.count(this.bucket(this.ipBuckets, ip), now, RATE_LIMITS.windowMs)
+    const fpCount = fp
+      ? this.count(this.bucket(this.fpBuckets, fp), now, RATE_LIMITS.windowMs)
+      : 0
+    const searchCount = isSearch
+      ? this.count(this.bucket(this.searchBuckets, fp || ip), now, RATE_LIMITS.windowMs)
+      : 0
+    return {
+      ipRatio: ipCount / RATE_LIMITS.ipPerMinute,
+      fpRatio: fp ? fpCount / RATE_LIMITS.fpPerMinute : 0,
+      searchRatio: isSearch ? searchCount / RATE_LIMITS.searchPerMinute : 0,
+    }
   }
 
   record(ip, fp, isSearch) {
@@ -259,8 +287,10 @@ class ServerRateLimiter {
 
 // --- Proof-of-Work ---
 
-const POW_DIFFICULTY = 3
+/** Фиксированный fallback; фактическая сложность хранится в `powChallenges[challenge].difficulty`. */
+const POW_DIFFICULTY = POW_MIN_DIFFICULTY
 const POW_CHALLENGE_TTL_MS = 5 * 60_000
+/** challenge → { createdAt, ip, difficulty } */
 const powChallenges = new Map()
 
 setInterval(() => {
@@ -376,15 +406,78 @@ const rateLimiter = new ServerRateLimiter()
 app.set('trust proxy', true)
 app.use(express.json({ limit: '1mb' }))
 
-// PoW challenge
+/**
+ * Выдача PoW-challenge с динамической сложностью.
+ * Сложность вычисляется по preliminary risk score текущего клиента.
+ * Наличие валидного `X-Session` снижает score (и, как следствие, сложность).
+ */
 app.get('/api/pow-challenge', (req, res) => {
   const ip = getClientIp(req)
+  const fp = req.headers['x-client-fp'] || ''
+  if (fp) markWarmupVisit(fp) // считаем получение PoW-challenge «прогревом» сессии
+
+  // Preliminary risk score (без учёта rate-limit записи — нас интересует "кто пришёл").
+  const behaviorHeader = req.headers['x-behavior'] || ''
+  const sessionHeader = req.headers['x-session'] || ''
+  const sessionCheck = sessionHeader ? verifySessionToken(sessionHeader, ip, fp) : { valid: false }
+  const ratios = rateLimiter.getRatios(ip, fp, false)
+  const entropy = getEntropyStats(fp)
+  const preliminary = scoreRisk({
+    ip,
+    fp,
+    behaviorHeader,
+    limitState: ratios,
+    entropy,
+    asn: lookupAsn(ip),
+    session: {
+      isFreshFp: isFreshFingerprint(fp),
+      hasSessionToken: sessionCheck.valid,
+      hasWarmupVisit: hasWarmupVisit(fp),
+    },
+  })
+  // Валидная сессия снижает эффективный score (и сложность).
+  let effectiveScore = preliminary.score
+  if (sessionCheck.valid) effectiveScore = Math.max(0, effectiveScore - 20)
+  const difficulty = difficultyForScore(effectiveScore)
+
   const challenge = createHash('sha256')
     .update(`${ip}:${Date.now()}:${Math.random()}`)
     .digest('hex')
     .slice(0, 32)
-  powChallenges.set(challenge, { createdAt: Date.now(), ip })
-  res.json({ challenge, difficulty: POW_DIFFICULTY })
+  powChallenges.set(challenge, { createdAt: Date.now(), ip, difficulty })
+  res.json({ challenge, difficulty })
+})
+
+/**
+ * Выдача session token (задача 5).
+ * Требует валидный PoW + fingerprint. `X-Behavior` желателен (иначе штраф в score,
+ * но эндпоинт всё равно отработает — валидация поведения делается в /api/proxy).
+ */
+app.post('/api/session', (req, res) => {
+  const ip = getClientIp(req)
+  const fp = req.headers['x-client-fp'] || ''
+  if (!fp) return res.status(400).json({ error: 'Отсутствует X-Client-FP' })
+
+  const powChallenge = req.headers['x-pow-challenge']
+  const powNonce = req.headers['x-pow-nonce']
+  if (!powChallenge || !powNonce) {
+    return res.status(403).json({ error: 'Требуется Proof-of-Work', powRequired: true })
+  }
+  const rec = powChallenges.get(powChallenge)
+  if (!rec) {
+    return res.status(403).json({ error: 'Невалидный PoW challenge', powRequired: true })
+  }
+  if (Date.now() - rec.createdAt > POW_CHALLENGE_TTL_MS) {
+    powChallenges.delete(powChallenge)
+    return res.status(403).json({ error: 'PoW challenge просрочен', powRequired: true })
+  }
+  if (!verifyPow(powChallenge, powNonce, rec.difficulty)) {
+    return res.status(403).json({ error: 'Неверное PoW-решение', powRequired: true })
+  }
+  powChallenges.delete(powChallenge)
+
+  const { token, exp } = issueSessionToken(ip, fp)
+  return res.json({ token, exp })
 })
 
 // BFF Proxy
@@ -393,11 +486,23 @@ app.post('/api/proxy', async (req, res) => {
     const body = req.body || {}
     const ip = getClientIp(req)
     const fp = req.headers['x-client-fp'] || ''
+    const behaviorHeader = req.headers['x-behavior'] || ''
     const routeMeta = ACTION_ROUTE_MAP[body.action]
     const isSearch = !!body.search || !!(routeMeta?.isSearch)
     const isMarket = !!(routeMeta?.isMarket)
 
-    // 1) Rate limit и CAPTCHA — только для "рыночных" действий.
+    // Валидация session token (задача 5) — до rate-limit/PoW.
+    const sessionHeader = req.headers['x-session'] || ''
+    const sessionCheck = sessionHeader ? verifySessionToken(sessionHeader, ip, fp) : { valid: false }
+
+    // 0) Временный бан (ip+fp) — 403 сразу.
+    if (isBanned(ip, fp)) {
+      return res
+        .status(403)
+        .json({ error: 'Доступ временно ограничен', banned: true })
+    }
+
+    // 1) Rate limit — только для "рыночных" действий.
     let limit = { limited: false, retryAfterSec: 0, slowdownMs: 0, captchaRequired: false }
     if (isMarket) {
       limit = rateLimiter.check(ip, fp, isSearch)
@@ -408,39 +513,94 @@ app.post('/api/proxy', async (req, res) => {
           .json({ error: 'Слишком много запросов', retryAfter: limit.retryAfterSec })
       }
 
-      // 2) CAPTCHA эскалация
-      if (limit.captchaRequired) {
+      // 2) Risk-scoring (заменяет авто-триггер CAPTCHA на 90%).
+      const ratios = rateLimiter.getRatios(ip, fp, isSearch)
+      const entropy = getEntropyStats(fp)
+      const scored = scoreRisk({
+        ip,
+        fp,
+        behaviorHeader,
+        limitState: ratios,
+        entropy,
+        asn: lookupAsn(ip),
+        session: {
+          isFreshFp: isFreshFingerprint(fp),
+          hasSessionToken: sessionCheck.valid,
+          hasWarmupVisit: hasWarmupVisit(fp),
+        },
+      })
+      // Валидная сессия — бонус −20 к score (критерий приёмки задачи 5).
+      let score = scored.score
+      const reasons = [...scored.reasons]
+      if (sessionCheck.valid) {
+        const bonus = Math.min(20, score)
+        if (bonus > 0) {
+          score -= bonus
+          reasons.push(`sessionBonus (-${bonus})`)
+        }
+      }
+      if (score >= 40) {
+        console.warn(`[BFF RISK] ip=${ip} fp=${String(fp).slice(0, 8)} score=${score} reasons=[${reasons.join(', ')}]`)
+      }
+
+      if (score >= 90) {
+        // Временный бан и 403.
+        addBan(ip, fp)
+        return res.status(403).json({ error: 'Доступ временно ограничен', banned: true, riskScore: score })
+      }
+
+      if (score >= 70) {
+        // Требуем CAPTCHA.
         const token = req.headers['x-captcha-token']
         if (!token) {
-          return res.status(403).json({ error: 'Требуется CAPTCHA', captchaRequired: true })
+          return res.status(403).json({ error: 'Требуется CAPTCHA', captchaRequired: true, riskScore: score })
         }
         if (HCAPTCHA_SECRET) {
           const ok = await verifyCaptcha(token, ip, HCAPTCHA_SECRET)
           if (!ok) {
-            return res.status(403).json({ error: 'Невалидный CAPTCHA-токен', captchaRequired: true })
+            return res.status(403).json({ error: 'Невалидный CAPTCHA-токен', captchaRequired: true, riskScore: score })
           }
         }
+      } else if (score >= 40) {
+        // Soft challenge: дополнительный slowdown, пропорциональный score.
+        const extraSlowdown = score * 30 // 40→1200ms, 69→2070ms
+        limit.slowdownMs = Math.max(limit.slowdownMs, extraSlowdown)
       }
     }
 
-    // 3) PoW
+    // 3) PoW. Для не-search запросов при валидной сессии PoW можно пропустить
+    //    (критерий приёмки задачи 5: «прогретый» клиент не решает PoW на каждый запрос).
+    const canSkipPow = sessionCheck.valid && !isSearch
     const powChallenge = req.headers['x-pow-challenge']
     const powNonce = req.headers['x-pow-nonce']
     if (!powChallenge || !powNonce) {
-      return res.status(403).json({ error: 'Требуется Proof-of-Work', powRequired: true })
+      if (!canSkipPow) {
+        return res.status(403).json({ error: 'Требуется Proof-of-Work', powRequired: true })
+      }
+    } else {
+      const rec = powChallenges.get(powChallenge)
+      if (!rec) {
+        if (!canSkipPow) {
+          return res.status(403).json({ error: 'Невалидный PoW challenge', powRequired: true })
+        }
+      } else {
+        if (Date.now() - rec.createdAt > POW_CHALLENGE_TTL_MS) {
+          powChallenges.delete(powChallenge)
+          if (!canSkipPow) {
+            return res.status(403).json({ error: 'PoW challenge просрочен', powRequired: true })
+          }
+        } else {
+          // Используем сохранённую сложность challenge, а не присланную клиентом.
+          const difficulty = typeof rec.difficulty === 'number' ? rec.difficulty : POW_DIFFICULTY
+          if (!verifyPow(powChallenge, powNonce, difficulty)) {
+            if (!canSkipPow) {
+              return res.status(403).json({ error: 'Неверное PoW-решение', powRequired: true })
+            }
+          }
+          powChallenges.delete(powChallenge)
+        }
+      }
     }
-    const rec = powChallenges.get(powChallenge)
-    if (!rec) {
-      return res.status(403).json({ error: 'Невалидный PoW challenge', powRequired: true })
-    }
-    if (Date.now() - rec.createdAt > POW_CHALLENGE_TTL_MS) {
-      powChallenges.delete(powChallenge)
-      return res.status(403).json({ error: 'PoW challenge просрочен', powRequired: true })
-    }
-    if (!verifyPow(powChallenge, powNonce, POW_DIFFICULTY)) {
-      return res.status(403).json({ error: 'Неверное PoW-решение', powRequired: true })
-    }
-    powChallenges.delete(powChallenge)
 
     // 4) Подпись
     if (!verifySignature(body, fp)) {
@@ -452,6 +612,15 @@ app.post('/api/proxy', async (req, res) => {
       await new Promise((r) => setTimeout(r, limit.slowdownMs))
     }
 
+    // Запись в кольцевой буфер для энтропийного анализа — любой запрос
+    // (задача 7: отличаем market от не-market для сигнала "только market").
+    if (fp) {
+      const paramsHash = createHash('sha1')
+        .update(String(body.payload || ''))
+        .digest('base64url')
+        .slice(0, 10)
+      recordRequestForEntropy(fp, body.action, paramsHash, isMarket)
+    }
     if (isMarket) {
       rateLimiter.record(ip, fp, isSearch)
     }

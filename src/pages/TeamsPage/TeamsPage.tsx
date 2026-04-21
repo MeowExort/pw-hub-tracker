@@ -8,6 +8,7 @@ import { ErrorMessage } from '@/shared/ui/ErrorMessage'
 import { Pagination } from '@/shared/ui/Pagination'
 import { formatDateTime, getServerName, getClassIcon, getClassName } from '@/shared/utils/format'
 import { PlayerTooltip } from '@/shared/ui/PlayerTooltip'
+import { notifyTextInput } from '@/shared/security/behavior-tracker'
 import styles from './TeamsPage.module.scss'
 
 const PAGE_SIZE = 20
@@ -249,6 +250,7 @@ export function TeamsPage() {
             placeholder="Поиск по названию…"
             value={searchInput}
             onChange={(e) => {
+              notifyTextInput(searchInput.length, e.target.value.length)
               setSearchInput(e.target.value)
               setPage(1)
             }}
