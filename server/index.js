@@ -42,6 +42,7 @@ import {
 import { startAlertsWorker } from './alerts-worker.js'
 import { checkRedis, _redisDebug } from './redis.js'
 import { createShare, readShare } from './share.js'
+import { createOgMiddleware } from './og-cards.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -850,6 +851,19 @@ app.get('/c/:code', (req, res) => {
 
 // --- Статика ---
 const distPath = path.resolve(__dirname, 'dist')
+
+// Карточки ссылок (Open Graph / Twitter Card) для профильных страниц.
+// Должно стоять ДО express.static и catch-all, т.к. инжектит в index.html
+// мета-теги на основе данных из API. Для остальных путей — next().
+app.use(
+  createOgMiddleware({
+    distPath,
+    apiTarget: API_TARGET,
+    apiKey: API_KEY,
+    siteUrl: SITE_URL,
+  }),
+)
+
 app.use(express.static(distPath, { index: false }))
 app.get('*', (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'), (err) => {
