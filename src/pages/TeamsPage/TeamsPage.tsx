@@ -177,7 +177,7 @@ export function TeamsPage() {
   // View mode
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const stored = localStorage.getItem(VIEW_STORAGE_KEY)
-    return stored === 'cards' || stored === 'table' ? stored : 'cards'
+    return stored === 'cards' || stored === 'table' ? stored : 'table'
   })
 
   const handleViewChange = (mode: ViewMode) => {
@@ -247,6 +247,7 @@ export function TeamsPage() {
         <h1 className={styles.title}>Рейтинг команд</h1>
         <div className={styles.filters}>
           <ClearableInput
+            wrapperClassName={styles.searchWrap}
             className={styles.searchInput}
             type="text"
             placeholder="Поиск по названию…"

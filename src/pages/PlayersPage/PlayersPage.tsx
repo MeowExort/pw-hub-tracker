@@ -207,6 +207,7 @@ export function PlayersPage() {
         <h1 className={styles.title}>Игроки</h1>
         <div className={styles.filters}>
           <ClearableInput
+            wrapperClassName={styles.searchWrap}
             className={styles.searchInput}
             type="text"
             placeholder="Поиск по нику…"
