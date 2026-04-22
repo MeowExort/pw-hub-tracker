@@ -5,6 +5,7 @@ import {
   sharePayloadToItems,
   type CollectionShareV1,
 } from '@/shared/collections'
+import { ClearableInput } from '@/shared/ui/ClearableInput'
 import styles from './CollectionsPage.module.scss'
 
 export interface ImportResult {
@@ -84,11 +85,12 @@ export function CollectionImportDialog({ initialCode, onClose, onImport }: Colle
         <div className={styles.modalBody}>
           <label className={styles.field}>
             <span className={styles.fieldLabel}>Ссылка или код</span>
-            <input
+            <ClearableInput
               type="text"
               className={styles.input}
               value={input}
               onChange={(e) => { setInput(e.target.value); setPreview(null); setError(null) }}
+              onClear={() => { setInput(''); setPreview(null); setError(null) }}
               placeholder="https://…/c/XXXXXXXX или XXXXXXXX"
               autoFocus
               onKeyDown={(e) => {

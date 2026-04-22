@@ -258,8 +258,11 @@
 .toolbarSpacer {
   flex: 1 1 auto;
 }
-.toolbarSearch {
+.toolbarSearchWrap {
   flex: 0 1 220px;
+  min-width: 0;
+}
+.toolbarSearch {
   padding: var(--space-xs) var(--space-sm);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -364,6 +367,7 @@
   align-items: center;
   gap: var(--space-sm);
   min-width: 0;
+  padding-right: calc(var(--space-lg) + 4px);
 }
 .cardIcon {
   width: 28px;
@@ -374,9 +378,9 @@
 .cardName {
   font-weight: 600;
   font-size: var(--font-size-sm);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .cardMeta {
   font-size: var(--font-size-xs);
@@ -391,6 +395,12 @@
   flex: 1 1 auto;
   min-width: 0;
   &:hover .cardName { color: var(--primary); }
+}
+.cardMenuWrap {
+  position: absolute;
+  top: var(--space-xs);
+  right: var(--space-xs);
+  z-index: 5;
 }
 .cardMenuBtn {
   background: transparent;
@@ -523,6 +533,7 @@
   .cardHead {
     flex: 1 1 220px;
     min-width: 180px;
+    padding-right: 0;
   }
   .cardPrices {
     flex: 0 0 auto;
@@ -538,6 +549,12 @@
   .cardNote {
     flex: 1 1 100%;
     margin-top: -2px;
+    order: 50;
+  }
+  .cardMenuWrap {
+    position: static;
+    margin-left: auto;
+    order: 100;
   }
 }
 /* compact view */
@@ -552,6 +569,18 @@
   .cardHead {
     flex: 1 1 auto;
     min-width: 0;
+    padding-right: 0;
+  }
+  .cardMenuWrap {
+    position: static;
+    margin-left: auto;
+    order: 100;
+    flex: 0 0 auto;
+  }
+  .cardName {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .cardIcon {
     width: 20px;

@@ -13,6 +13,7 @@ import {
 import { getClassName, getMatchPatternName, formatDateTime } from '@/shared/utils/format'
 import { Spinner } from '@/shared/ui/Spinner'
 import { ErrorMessage } from '@/shared/ui/ErrorMessage'
+import { ClearableInput } from '@/shared/ui/ClearableInput'
 import s from '@/shared/styles/analytics.module.scss'
 
 const MATCH_PATTERNS = [0, 1]
@@ -124,8 +125,8 @@ function CardTab() {
   return (
     <div className={s.card}>
       <div className={s.filters}>
-        <input className={s.input} placeholder="Сервер" value={server} onChange={(e) => setServer(e.target.value)} />
-        <input className={s.input} placeholder="ID игрока" value={playerId} onChange={(e) => setPlayerId(e.target.value)} />
+        <ClearableInput className={s.input} placeholder="Сервер" value={server} onChange={(e) => setServer(e.target.value)} onClear={() => setServer('')} />
+        <ClearableInput className={s.input} placeholder="ID игрока" value={playerId} onChange={(e) => setPlayerId(e.target.value)} onClear={() => setPlayerId('')} />
         <button className={s.tab} onClick={handleSearch}>Найти</button>
       </div>
 
@@ -226,10 +227,10 @@ function CompareTab() {
   return (
     <div className={s.card}>
       <div className={s.filters}>
-        <input className={s.input} placeholder="Сервер 1" value={p1Server} onChange={(e) => setP1Server(e.target.value)} />
-        <input className={s.input} placeholder="ID 1" value={p1Id} onChange={(e) => setP1Id(e.target.value)} />
-        <input className={s.input} placeholder="Сервер 2" value={p2Server} onChange={(e) => setP2Server(e.target.value)} />
-        <input className={s.input} placeholder="ID 2" value={p2Id} onChange={(e) => setP2Id(e.target.value)} />
+        <ClearableInput className={s.input} placeholder="Сервер 1" value={p1Server} onChange={(e) => setP1Server(e.target.value)} onClear={() => setP1Server('')} />
+        <ClearableInput className={s.input} placeholder="ID 1" value={p1Id} onChange={(e) => setP1Id(e.target.value)} onClear={() => setP1Id('')} />
+        <ClearableInput className={s.input} placeholder="Сервер 2" value={p2Server} onChange={(e) => setP2Server(e.target.value)} onClear={() => setP2Server('')} />
+        <ClearableInput className={s.input} placeholder="ID 2" value={p2Id} onChange={(e) => setP2Id(e.target.value)} onClear={() => setP2Id('')} />
         <button className={s.tab} onClick={handleCompare}>Сравнить</button>
       </div>
 
@@ -313,8 +314,8 @@ function HistoryTab() {
   return (
     <div className={s.card}>
       <div className={s.filters}>
-        <input className={s.input} placeholder="Сервер" value={server} onChange={(e) => setServer(e.target.value)} />
-        <input className={s.input} placeholder="ID игрока" value={playerId} onChange={(e) => setPlayerId(e.target.value)} />
+        <ClearableInput className={s.input} placeholder="Сервер" value={server} onChange={(e) => setServer(e.target.value)} onClear={() => setServer('')} />
+        <ClearableInput className={s.input} placeholder="ID игрока" value={playerId} onChange={(e) => setPlayerId(e.target.value)} onClear={() => setPlayerId('')} />
         <div className={s.sliderWrap}>
           <span>Лимит: {limit}</span>
           <input type="range" className={s.slider} min={1} max={1000} value={limit} onChange={(e) => setLimit(Number(e.target.value))} />

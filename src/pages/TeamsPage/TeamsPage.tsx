@@ -10,6 +10,7 @@ import { Pagination } from '@/shared/ui/Pagination'
 import { formatDateTime, getServerName, getClassIcon, getClassName } from '@/shared/utils/format'
 import { PlayerTooltip } from '@/shared/ui/PlayerTooltip'
 import { notifyTextInput } from '@/shared/security/behavior-tracker'
+import { ClearableInput } from '@/shared/ui/ClearableInput'
 import styles from './TeamsPage.module.scss'
 
 const PAGE_SIZE = 20
@@ -245,7 +246,7 @@ export function TeamsPage() {
       <div className={styles.header}>
         <h1 className={styles.title}>Рейтинг команд</h1>
         <div className={styles.filters}>
-          <input
+          <ClearableInput
             className={styles.searchInput}
             type="text"
             placeholder="Поиск по названию…"
@@ -253,6 +254,11 @@ export function TeamsPage() {
             onChange={(e) => {
               notifyTextInput(searchInput.length, e.target.value.length)
               setSearchInput(e.target.value)
+              setPage(1)
+            }}
+            onClear={() => {
+              notifyTextInput(searchInput.length, 0)
+              setSearchInput('')
               setPage(1)
             }}
           />

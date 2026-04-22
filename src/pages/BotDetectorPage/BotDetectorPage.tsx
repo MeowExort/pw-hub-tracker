@@ -7,6 +7,7 @@ import { usePShopServer } from '@/shared/hooks/usePShopServer'
 import { Spinner } from '@/shared/ui/Spinner'
 import { ErrorMessage } from '@/shared/ui/ErrorMessage'
 import { formatNumber, formatDate, formatSeconds } from '@/shared/utils/pshop'
+import { NumberInput } from '@/shared/ui/NumberInput/NumberInput'
 import styles from '@/shared/styles/pshop.module.scss'
 
 /** Страница «Детектор ботов» */
@@ -36,8 +37,7 @@ export function BotDetectorPage() {
 
       <div className={styles.filters}>
         <label>
-          Период (дней): <input
-            type="number"
+          Период (дней): <NumberInput
             className={styles.filterInput}
             value={days}
             min={1}
@@ -46,8 +46,7 @@ export function BotDetectorPage() {
           />
         </label>
         <label>
-          Мин. событий: <input
-            type="number"
+          Мин. событий: <NumberInput
             className={styles.filterInput}
             value={minEvents}
             min={1}

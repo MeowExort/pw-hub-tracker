@@ -1,0 +1,52 @@
+.wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input {
+  width: 100%;
+  /* Резервируем место под кнопку очистки, чтобы текст не подлезал под неё */
+  padding-right: calc(var(--space-md) + 14px);
+}
+
+.clearBtn {
+  position: absolute;
+  right: var(--space-xs);
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  opacity: 0.55;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 12px;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    background: var(--card-hover);
+    color: var(--text);
+    opacity: 1;
+  }
+
+  &:focus-visible {
+    outline: 1px solid var(--primary);
+    outline-offset: 1px;
+    opacity: 1;
+  }
+}
+
+.icon {
+  width: 12px;
+  height: 12px;
+  display: block;
+}

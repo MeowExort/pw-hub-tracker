@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getItems, type PShopServer } from '@/shared/api/pshop'
 import { notifyTextInput } from '@/shared/security/behavior-tracker'
 import { formatNumber } from '@/shared/utils/pshop'
+import { ClearableInput } from '@/shared/ui/ClearableInput'
 import styles from './CollectionsPage.module.scss'
 
 export interface AddItemDialogProps {
@@ -54,12 +55,16 @@ export function AddItemDialog({ open, server, excludeIds, onClose, onAdd }: AddI
           <h3>Добавить предмет</h3>
         </div>
         <div className={styles.modalBody}>
-          <input
+          <ClearableInput
             type="text"
             value={search}
             onChange={(e) => {
               notifyTextInput(search.length, e.target.value.length)
               setSearch(e.target.value)
+            }}
+            onClear={() => {
+              notifyTextInput(search.length, 0)
+              setSearch('')
             }}
             placeholder="Начните вводить название..."
             className={styles.modalInput}

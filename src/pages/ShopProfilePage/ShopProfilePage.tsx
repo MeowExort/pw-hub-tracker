@@ -15,6 +15,8 @@ import {ItemTooltip} from '@/shared/ui/ItemTooltip/ItemTooltip'
 import {PlayerTooltip} from '@/shared/ui/PlayerTooltip'
 import {getClassIcon, getClassName} from '@/shared/utils/format'
 import {formatDate, formatNumber, formatSeconds} from '@/shared/utils/pshop'
+import { ClearableInput } from '@/shared/ui/ClearableInput'
+import { SERVER_LABELS } from '@/shared/ui/ServerSelector/ServerSelector'
 import styles from './ShopProfilePage.module.scss'
 
 type ViewMode = 'grid' | 'table'
@@ -400,7 +402,7 @@ export function ShopProfilePage() {
     return (
         <div>
             <div className={styles.breadcrumbs}>
-                <Link to="/shops">Магазины</Link> → {server} → {playerId}
+                <Link to="/shops">Магазины</Link> → {SERVER_LABELS[server as PShopServer] ?? server} → {playerId}
             </div>
 
             <div className={styles.layout}>
@@ -432,7 +434,7 @@ export function ShopProfilePage() {
                                 <span className={styles.playerName}>{playerName}</span>
                             )}
                             <div className={styles.playerMeta}>
-                                <span className={styles.metaChip}>{server}</span>
+                                <span className={styles.metaChip}>{SERVER_LABELS[server as PShopServer] ?? server}</span>
                                 {shop.data && (
                                     <span
                                         className={`${styles.badge} ${shop.data.isActive ? styles.badgeActive : styles.badgeInactive}`}>
@@ -522,12 +524,13 @@ export function ShopProfilePage() {
                 <div className={styles.content}>
                     {/* Toolbar */}
                     <div className={styles.toolbar}>
-                        <input
+                        <ClearableInput
                             type="text"
                             className={styles.searchInput}
                             placeholder="Поиск по названию предмета…"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
+                            onClear={() => setSearch('')}
                         />
                         <div className={styles.filterGroup}>
                             {([

@@ -9,6 +9,7 @@ import { Spinner } from '@/shared/ui/Spinner'
 import { ErrorMessage } from '@/shared/ui/ErrorMessage'
 import { Pagination } from '@/shared/ui/Pagination'
 import { ItemTooltip } from '@/shared/ui/ItemTooltip'
+import { ClearableInput } from '@/shared/ui/ClearableInput'
 import { formatNumber } from '@/shared/utils/pshop'
 import { notifyTextInput } from '@/shared/security/behavior-tracker'
 import styles from './ItemsPage.module.scss'
@@ -86,16 +87,17 @@ export function ItemsPage() {
 
       <div className={styles.filters}>
         <div className={styles.searchBox}>
-          <input
+          <ClearableInput
             type="text"
             placeholder="Поиск предметов..."
             value={searchInput}
             onChange={(e) => { notifyTextInput(searchInput.length, e.target.value.length); setSearchInput(e.target.value) }}
+            onClear={() => { notifyTextInput(searchInput.length, 0); setSearchInput('') }}
             className={styles.searchInput}
           />
         </div>
         <div className={styles.priceFilters}>
-          <input
+          <ClearableInput
             type="number"
             placeholder="Мин. цена"
             value={minPrice}
@@ -105,8 +107,13 @@ export function ItemsPage() {
               else p.delete('minPrice')
               setSearchParams(p)
             }}
+            onClear={() => {
+              const p = new URLSearchParams(searchParams)
+              p.delete('minPrice')
+              setSearchParams(p)
+            }}
           />
-          <input
+          <ClearableInput
             type="number"
             placeholder="Макс. цена"
             value={maxPrice}
@@ -114,6 +121,11 @@ export function ItemsPage() {
               const p = new URLSearchParams(searchParams)
               if (e.target.value) p.set('maxPrice', e.target.value)
               else p.delete('maxPrice')
+              setSearchParams(p)
+            }}
+            onClear={() => {
+              const p = new URLSearchParams(searchParams)
+              p.delete('maxPrice')
               setSearchParams(p)
             }}
           />

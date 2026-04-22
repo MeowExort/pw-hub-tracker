@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Collection } from '@/shared/collections'
+import { ClearableInput } from '@/shared/ui/ClearableInput'
 import styles from './CollectionsPage.module.scss'
 
 const ICON_PRESETS = ['📦', '⚔️', '💍', '🧪', '🐉', '💎', '🎁', '🗡️', '🛡️', '🏹', '✨', '🌟', '🔥', '💰']
@@ -48,11 +49,12 @@ export function CollectionEditorDialog({ open, initial, onClose, onSubmit }: Col
         <div className={styles.modalBody}>
           <label className={styles.field}>
             <span className={styles.fieldLabel}>Название</span>
-            <input
+            <ClearableInput
               type="text"
               className={styles.input}
               value={name}
               onChange={(e) => setName(e.target.value)}
+              onClear={() => setName('')}
               autoFocus
               maxLength={60}
               placeholder="Например: Крафт оружия"

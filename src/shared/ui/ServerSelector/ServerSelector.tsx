@@ -1,11 +1,11 @@
 import { PSHOP_SERVERS, type PShopServer } from '@/shared/api/pshop'
 import styles from './ServerSelector.module.scss'
 
-const SERVER_LABELS: Record<PShopServer, string> = {
-  capella: 'Capella',
-  centaur: 'Centaur',
-  alkor: 'Alkor',
-  mizar: 'Mizar',
+export const SERVER_LABELS: Record<PShopServer, string> = {
+  capella: 'Капелла',
+  centaur: 'Центавр',
+  alkor: 'Фенрир',
+  mizar: 'Мицар',
 }
 
 interface ServerSelectorProps {

@@ -14,6 +14,7 @@ import { Spinner } from '@/shared/ui/Spinner'
 import { ErrorMessage } from '@/shared/ui/ErrorMessage'
 import { Pagination } from '@/shared/ui/Pagination'
 import { formatNumber, daysAgoISO } from '@/shared/utils/pshop'
+import { ClearableInput } from '@/shared/ui/ClearableInput'
 import styles from './TradeAnalyticsPage.module.scss'
 
 const PAGE_SIZE = 50
@@ -227,13 +228,17 @@ export function TradeAnalyticsPage() {
             </span>
           ) : (
             <div className={styles.autocompleteBox} ref={acRef}>
-              <input
+              <ClearableInput
                 className={styles.input}
                 type="text"
                 placeholder="Найти сделки по предмету…"
                 value={itemSearch}
                 onChange={(e) => {
                   setItemSearch(e.target.value)
+                  setAcOpen(true)
+                }}
+                onClear={() => {
+                  setItemSearch('')
                   setAcOpen(true)
                 }}
                 onFocus={() => setAcOpen(true)}

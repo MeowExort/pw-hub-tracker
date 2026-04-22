@@ -15,6 +15,8 @@ import { PlayerTooltip } from '@/shared/ui/PlayerTooltip'
 import { TeamTooltip } from '@/shared/ui/TeamTooltip'
 import { BuffIndicator } from '@/shared/ui/BuffIndicator'
 import { notifyTextInput } from '@/shared/security/behavior-tracker'
+import { ClearableInput } from '@/shared/ui/ClearableInput'
+import { NumberInput } from '@/shared/ui/NumberInput/NumberInput'
 import styles from './PlayersPage.module.scss'
 
 const PAGE_SIZE = 20
@@ -182,17 +184,15 @@ export function PlayersPage() {
     if (!f) return null
     return (
       <div className={styles.rangeFilter}>
-        <input
+        <NumberInput
           className={styles.filterInput}
-          type="number"
           placeholder="от"
           value={f.min}
           onChange={(e) => { f.setMin(e.target.value); setPage(1) }}
           autoFocus
         />
-        <input
+        <NumberInput
           className={styles.filterInput}
-          type="number"
           placeholder="до"
           value={f.max}
           onChange={(e) => { f.setMax(e.target.value); setPage(1) }}
@@ -206,12 +206,13 @@ export function PlayersPage() {
       <div className={styles.header}>
         <h1 className={styles.title}>Игроки</h1>
         <div className={styles.filters}>
-          <input
+          <ClearableInput
             className={styles.searchInput}
             type="text"
             placeholder="Поиск по нику…"
             value={searchInput}
             onChange={(e) => { notifyTextInput(searchInput.length, e.target.value.length); setSearchInput(e.target.value); setPage(1) }}
+            onClear={() => { notifyTextInput(searchInput.length, 0); setSearchInput(''); setPage(1) }}
           />
           <select
             className={styles.select}

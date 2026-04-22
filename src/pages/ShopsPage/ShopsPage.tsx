@@ -18,6 +18,8 @@ import { Pagination } from '@/shared/ui/Pagination'
 import { formatDate, formatNumber } from '@/shared/utils/pshop'
 import { PlayerTooltip } from '@/shared/ui/PlayerTooltip'
 import { ItemTooltip } from '@/shared/ui/ItemTooltip'
+import { ClearableInput } from '@/shared/ui/ClearableInput'
+import { NumberInput } from '@/shared/ui/NumberInput/NumberInput'
 import { notifyTextInput } from '@/shared/security/behavior-tracker'
 import styles from './ShopsPage.module.scss'
 
@@ -195,12 +197,13 @@ export function ShopsPage() {
       <div className={styles.filters}>
         <div className={styles.filtersRow}>
           <div className={styles.searchBox}>
-            <input
+            <ClearableInput
               className={styles.input}
               type="text"
               placeholder="Поиск по имени игрока…"
               value={searchInput}
               onChange={(e) => { notifyTextInput(searchInput.length, e.target.value.length); setSearchInput(e.target.value) }}
+              onClear={() => { notifyTextInput(searchInput.length, 0); setSearchInput('') }}
             />
           </div>
 
@@ -250,7 +253,7 @@ export function ShopsPage() {
             </span>
           ) : (
             <div className={styles.autocompleteBox} ref={acRef}>
-              <input
+              <ClearableInput
                 className={styles.input}
                 style={{ width: '100%' }}
                 type="text"
@@ -258,6 +261,10 @@ export function ShopsPage() {
                 value={itemSearch}
                 onChange={(e) => {
                   setItemSearch(e.target.value)
+                  setAcOpen(true)
+                }}
+                onClear={() => {
+                  setItemSearch('')
                   setAcOpen(true)
                 }}
                 onFocus={() => setAcOpen(true)}
@@ -286,9 +293,8 @@ export function ShopsPage() {
             </div>
           )}
 
-          <input
+          <NumberInput
             className={`${styles.input} ${styles.numberInput}`}
-            type="number"
             placeholder="Продажа от"
             value={minSellMoney}
             onChange={(e) =>
@@ -298,9 +304,8 @@ export function ShopsPage() {
               })
             }
           />
-          <input
+          <NumberInput
             className={`${styles.input} ${styles.numberInput}`}
-            type="number"
             placeholder="Продажа до"
             value={maxSellMoney}
             onChange={(e) =>
@@ -310,9 +315,8 @@ export function ShopsPage() {
               })
             }
           />
-          <input
+          <NumberInput
             className={`${styles.input} ${styles.numberInput}`}
-            type="number"
             placeholder="Скупка от"
             value={minBuyMoney}
             onChange={(e) =>
@@ -322,9 +326,8 @@ export function ShopsPage() {
               })
             }
           />
-          <input
+          <NumberInput
             className={`${styles.input} ${styles.numberInput}`}
-            type="number"
             placeholder="Скупка до"
             value={maxBuyMoney}
             onChange={(e) =>

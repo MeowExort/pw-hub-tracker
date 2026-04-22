@@ -9,6 +9,8 @@ import { formatPlayerName, getClassName, getClassIcon } from '@/shared/utils/for
 import { PlayerTooltip } from '@/shared/ui/PlayerTooltip'
 import { BuffIndicator } from '@/shared/ui/BuffIndicator'
 import { ToggleSwitch } from '@/shared/ui/ToggleSwitch'
+import { ClearableInput } from '@/shared/ui/ClearableInput'
+import { NumberInput } from '@/shared/ui/NumberInput/NumberInput'
 import { usePlayerExclusion } from '@/shared/hooks/usePlayerExclusion'
 import { AURA_IDS, ETERNALS_IDS } from './clans'
 import styles from './ClanComparePage.module.scss'
@@ -296,12 +298,13 @@ function PlayersTable({
   const renderFilterPopup = (col: { key: SortKey; label: string }) => {
     if (col.key === 'playerId') {
       return (
-        <input
+        <ClearableInput
           className={styles.filterInput}
           type="text"
           placeholder="ID..."
           value={idFilter}
           onChange={(e) => setIdFilter(e.target.value)}
+          onClear={() => setIdFilter('')}
           autoFocus
         />
       )
@@ -337,17 +340,15 @@ function PlayersTable({
     }
     return (
       <div className={styles.rangeFilter}>
-        <input
+        <NumberInput
           className={styles.filterInput}
-          type="number"
           placeholder="от"
           value={rangeFilters[col.key]?.min ?? ''}
           onChange={(e) => updateRange(col.key, 'min', e.target.value)}
           autoFocus
         />
-        <input
+        <NumberInput
           className={styles.filterInput}
-          type="number"
           placeholder="до"
           value={rangeFilters[col.key]?.max ?? ''}
           onChange={(e) => updateRange(col.key, 'max', e.target.value)}

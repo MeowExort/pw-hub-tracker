@@ -24,6 +24,7 @@ import {
 } from '@/shared/api/pushAlerts'
 import type { CollectionItem } from '@/shared/collections'
 import { usePushSubscription } from './hooks/usePushSubscription'
+import { NumberInput } from '@/shared/ui/NumberInput/NumberInput'
 import styles from './CollectionsPage.module.scss'
 
 export interface ItemAlertDialogProps {
@@ -162,13 +163,12 @@ export function ItemAlertDialog({
             <div className={styles.alertRow}>
               <label>
                 Цена
-                <input
+                <NumberInput
                   className={styles.modalInput}
-                  type="number"
                   min={1}
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  placeholder="например, 13000000"
+                  placeholder="например, 13 000 000"
                 />
               </label>
               <label>
@@ -195,9 +195,8 @@ export function ItemAlertDialog({
               </label>
               <label>
                 Cooldown, мин
-                <input
+                <NumberInput
                   className={styles.modalInput}
-                  type="number"
                   min={1}
                   max={1440}
                   value={cooldownMin}

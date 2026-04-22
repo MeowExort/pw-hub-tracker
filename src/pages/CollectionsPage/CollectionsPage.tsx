@@ -15,6 +15,8 @@ import { useCollectionItems } from './hooks/useCollectionItems'
 import { listAlerts, type AlertDTO } from '@/shared/api/pushAlerts'
 import styles from './CollectionsPage.module.scss'
 
+const VIEW_STORAGE_KEY = 'collections_viewMode'
+
 interface UndoToast {
   message: string
   until: number
@@ -69,7 +71,14 @@ export function CollectionsPage() {
   const [sortOrder, setSortOrder] = useState<CollectionSortOrder>('asc')
   const [priceSide, setPriceSide] = useState<CollectionPriceSide>('sell')
   const [filter, setFilter] = useState<CollectionFilter>('all')
-  const [view, setView] = useState<CollectionViewMode>('grid')
+  const [view, setView] = useState<CollectionViewMode>(() => {
+    const stored = localStorage.getItem(VIEW_STORAGE_KEY)
+    return stored === 'grid' || stored === 'list' || stored === 'compact' ? stored : 'grid'
+  })
+  const handleViewChange = (mode: CollectionViewMode) => {
+    setView(mode)
+    localStorage.setItem(VIEW_STORAGE_KEY, mode)
+  }
 
   // Сброс поиска при смене подборки, чтобы не путать пользователя
   useEffect(() => {
@@ -236,7 +245,7 @@ export function CollectionsPage() {
             filter={filter}
             onFilterChange={setFilter}
             view={view}
-            onViewChange={setView}
+            onViewChange={handleViewChange}
             updatedAt={data?.updatedAt ?? null}
             isFetching={isFetching}
             onRefresh={() => void refetch()}

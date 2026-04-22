@@ -98,7 +98,9 @@ export function CollectionItemCard({
             </span>
           </Link>
         </ItemTooltip>
+      </div>
 
+      <div className={styles.cardMenuWrap}>
         <button
           type="button"
           ref={menuBtnRef}

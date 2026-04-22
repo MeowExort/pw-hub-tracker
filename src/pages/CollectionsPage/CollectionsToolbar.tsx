@@ -1,4 +1,5 @@
 import { notifyTextInput } from '@/shared/security/behavior-tracker'
+import { ClearableInput } from '@/shared/ui/ClearableInput'
 import styles from './CollectionsPage.module.scss'
 
 export type CollectionSortBy = 'name' | 'sellMin' | 'buyMin' | 'addedAt'
@@ -40,15 +41,20 @@ export function CollectionsToolbar(props: CollectionsToolbarProps) {
 
   return (
     <div className={styles.toolbar}>
-      <input
+      <ClearableInput
         type="text"
         value={search}
         onChange={(e) => {
           notifyTextInput(search.length, e.target.value.length)
           onSearch(e.target.value)
         }}
+        onClear={() => {
+          notifyTextInput(search.length, 0)
+          onSearch('')
+        }}
         placeholder="Поиск по подборке..."
         className={styles.toolbarSearch}
+        wrapperClassName={styles.toolbarSearchWrap}
         disabled={disabled}
       />
 
