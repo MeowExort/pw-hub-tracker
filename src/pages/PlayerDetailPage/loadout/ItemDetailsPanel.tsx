@@ -4,14 +4,21 @@ import styles from './LoadoutSection.module.scss'
 
 interface Props {
   item: EquipItem
+  /**
+   * Если <c>true</c> — рендерит без обёртки <c>.detailsPanel</c>
+   * (sticky/border/padding). Используется внутри tooltip-а, у
+   * которого уже есть собственный фон и позиционирование.
+   */
+  embedded?: boolean
 }
 
-export function ItemDetailsPanel({ item }: Props) {
+export function ItemDetailsPanel({ item, embedded }: Props) {
   const icon = itemIconUrl(item.itemId)
   const subtitle = subtitleOf(item)
+  const wrapperClass = embedded ? styles.detailsEmbedded : styles.detailsPanel
 
   return (
-    <div className={styles.detailsPanel}>
+    <div className={wrapperClass}>
       <div className={styles.detailsHeader}>
         {icon && <img src={icon} alt={item.itemName ?? ''} className={styles.detailsIcon} onError={(e) => (e.currentTarget.style.display = 'none')} />}
         <div className={styles.detailsTitle}>

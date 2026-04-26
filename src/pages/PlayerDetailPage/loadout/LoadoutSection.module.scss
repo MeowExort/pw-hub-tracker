@@ -246,14 +246,42 @@ $slot-size: 60px;
 }
 
 .equipmentLayout {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--space-lg);
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  align-items: flex-start;
+}
 
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr;
-  }
+/* ── Tooltip с деталями экипировки ─────────────────────────────────── */
+
+.tooltipWrapper {
+  display: inline-flex;
+  position: relative;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 10000;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  padding: var(--space-md);
+  width: 360px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  pointer-events: none;
+  animation: tooltipFadeIn 0.15s ease-out;
+}
+
+.detailsEmbedded {
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes tooltipFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ── Item details panel (правая колонка) ────────────────────────────── */

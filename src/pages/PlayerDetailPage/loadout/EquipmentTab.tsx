@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { EquipItem, EquipmentSnapshot } from '@/shared/types/loadout'
 import {
   MAIN_LAYOUT,
@@ -7,7 +7,7 @@ import {
   itemIconUrl,
   slotLabel,
 } from './equipmentSlots'
-import { ItemDetailsPanel } from './ItemDetailsPanel'
+import { EquipmentItemTooltip } from './EquipmentItemTooltip'
 import styles from './LoadoutSection.module.scss'
 
 interface Props {
@@ -21,66 +21,32 @@ export function EquipmentTab({ equipment }: Props) {
     return m
   }, [equipment])
 
-  // По умолчанию выделяем оружие или первый ненулевой слот.
-  const initialSlot = useMemo(() => {
-    if (itemsByIndex.has(0)) return 0
-    const first = equipment.items[0]
-    return first ? first.slotIndex : -1
-  }, [itemsByIndex, equipment.items])
-  const [selected, setSelected] = useState<number>(initialSlot)
-  const selectedItem = selected >= 0 ? itemsByIndex.get(selected) : undefined
-
   return (
     <div className={styles.equipmentLayout}>
-      <div>
-        <PaperDoll itemsByIndex={itemsByIndex} selected={selected} onSelect={setSelected} />
+      <PaperDoll itemsByIndex={itemsByIndex} />
 
-        <SpecialRow
-          title="Карты генерала"
-          slots={POKER_SLOTS}
-          itemsByIndex={itemsByIndex}
-          selected={selected}
-          onSelect={setSelected}
-        />
+      <SpecialRow
+        title="Карты генерала"
+        slots={POKER_SLOTS}
+        itemsByIndex={itemsByIndex}
+      />
 
-        <SpecialRow
-          title="Стиль"
-          slots={STYLE_SLOTS}
-          itemsByIndex={itemsByIndex}
-          selected={selected}
-          onSelect={setSelected}
-        />
-      </div>
-
-      <div>
-        {selectedItem ? (
-          <ItemDetailsPanel item={selectedItem} />
-        ) : (
-          <div className={styles.detailsPanel}>
-            <div className={styles.placeholder}>
-              Выберите слот, чтобы увидеть детали предмета
-            </div>
-          </div>
-        )}
-      </div>
+      <SpecialRow title="Стиль" slots={STYLE_SLOTS} itemsByIndex={itemsByIndex} />
     </div>
   )
 }
 
 interface PaperDollProps {
   itemsByIndex: Map<number, EquipItem>
-  selected: number
-  onSelect: (slot: number) => void
 }
 
-function PaperDoll({ itemsByIndex, selected, onSelect }: PaperDollProps) {
+function PaperDoll({ itemsByIndex }: PaperDollProps) {
   return (
     <div className={styles.dollGrid}>
       <div className={styles.dollSilhouette} aria-hidden="true">
         <Silhouette />
       </div>
       {MAIN_LAYOUT.map((s) => {
-        // -1 = зарезервированная пустота (для выравнивания сетки).
         if (s.index < 0) {
           return (
             <div
@@ -98,8 +64,6 @@ function PaperDoll({ itemsByIndex, selected, onSelect }: PaperDollProps) {
             col={s.col}
             label={slotLabel(s.index)}
             item={itemsByIndex.get(s.index)}
-            active={selected === s.index}
-            onClick={() => itemsByIndex.has(s.index) && onSelect(s.index)}
           />
         )
       })}
@@ -111,23 +75,15 @@ interface SpecialRowProps {
   title: string
   slots: number[]
   itemsByIndex: Map<number, EquipItem>
-  selected: number
-  onSelect: (slot: number) => void
 }
 
-function SpecialRow({ title, slots, itemsByIndex, selected, onSelect }: SpecialRowProps) {
+function SpecialRow({ title, slots, itemsByIndex }: SpecialRowProps) {
   return (
     <div className={styles.dollSection}>
       <h3 className={styles.dollSectionTitle}>{title}</h3>
       <div className={styles.specialRow}>
         {slots.map((idx) => (
-          <SlotCell
-            key={idx}
-            label={slotLabel(idx)}
-            item={itemsByIndex.get(idx)}
-            active={selected === idx}
-            onClick={() => itemsByIndex.has(idx) && onSelect(idx)}
-          />
+          <SlotCell key={idx} label={slotLabel(idx)} item={itemsByIndex.get(idx)} />
         ))}
       </div>
     </div>
@@ -137,13 +93,11 @@ function SpecialRow({ title, slots, itemsByIndex, selected, onSelect }: SpecialR
 interface SlotCellProps {
   label: string
   item?: EquipItem
-  active: boolean
-  onClick: () => void
   row?: number
   col?: number
 }
 
-function SlotCell({ label, item, active, onClick, row, col }: SlotCellProps) {
+function SlotCell({ label, item, row, col }: SlotCellProps) {
   const style: React.CSSProperties = {}
   if (row && col) {
     style.gridRow = row
@@ -162,17 +116,32 @@ function SlotCell({ label, item, active, onClick, row, col }: SlotCellProps) {
     )
   }
 
+  return (
+    <EquipmentItemTooltip item={item}>
+      <SlotInner item={item} style={style} label={label} />
+    </EquipmentItemTooltip>
+  )
+}
+
+function SlotInner({
+  item,
+  style,
+  label,
+}: {
+  item: EquipItem
+  style: React.CSSProperties
+  label: string
+}) {
   const icon = itemIconUrl(item.itemId)
   const badge = badgeFor(item)
   const refine = refineFor(item)
-
   return (
-    <button
-      type="button"
-      className={`${styles.slotCell} ${active ? styles.slotActive : ''}`}
+    <span
+      className={styles.slotCell}
       style={style}
-      onClick={onClick}
       title={item.itemName ?? `#${item.itemId}`}
+      role="button"
+      tabIndex={0}
     >
       {icon ? (
         <img
@@ -187,7 +156,7 @@ function SlotCell({ label, item, active, onClick, row, col }: SlotCellProps) {
       )}
       {refine && <span className={styles.slotRefine}>+{refine}</span>}
       {badge && <span className={styles.slotBadge}>{badge}</span>}
-    </button>
+    </span>
   )
 }
 
