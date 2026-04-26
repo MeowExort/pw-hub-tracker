@@ -107,9 +107,16 @@
 
 $slot-size: 60px;
 
+// Зазор между левым и правым блоками: вместо обычной 6px-щели между col3 и col4
+// показываем заметный «коридор» с тонкой светящейся линией посередине.
+$slot-divider: 18px;
+
 .dollGrid {
   display: grid;
-  grid-template-columns: repeat(6, $slot-size);
+  grid-template-columns:
+    repeat(3, $slot-size)
+    $slot-divider
+    repeat(3, $slot-size);
   grid-template-rows: repeat(4, $slot-size);
   gap: 6px;
   width: fit-content;
@@ -117,6 +124,28 @@ $slot-size: 60px;
   background: linear-gradient(135deg, #1a1c24 0%, #15171f 100%);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
+  position: relative;
+
+  // Декоративная вертикальная линия в середине разделительной колонки.
+  &::before {
+    content: '';
+    position: absolute;
+    top: var(--space-sm);
+    bottom: var(--space-sm);
+    // 3 ячейки + 3 промежутка слева + центр разделителя
+    left: calc(var(--space-sm) + (#{$slot-size} * 3) + (6px * 3) + (#{$slot-divider} / 2) - 1px);
+    width: 2px;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(91, 127, 245, 0.18) 12%,
+      rgba(91, 127, 245, 0.32) 50%,
+      rgba(91, 127, 245, 0.18) 88%,
+      transparent 100%
+    );
+    border-radius: 2px;
+    pointer-events: none;
+  }
 }
 
 .slotReserved {
@@ -269,7 +298,10 @@ $slot-size: 60px;
 /* ── Item details — игровой формат тултипа ────────────────────────── */
 
 $gameDetailsBg: #1b1c25;
-$gameAccentBlue: #7DCEFF;
+// Тёмно-синий — для базовых характеристик (физ. атака, защита и т.п.) — как в игре.
+$gameAccentBlueDark: #4d8fff;
+// Светло-голубой — для камней, вставленных в ячейки.
+$gameAccentBlueLight: #9be0ff;
 $gameAccentRed: #ff5f55;
 $gameAccentPurple: #b06bff;
 $gameAccentGold: #ffcb4a;
@@ -328,9 +360,9 @@ $gameAccentEnhanced: #1cd45f;
   margin-top: 2px;
 }
 
-// Аддоны — салатовый, отличный от золотого имени предмета и бирюзового цвета камней.
+// Характеристики — тёмно-синие, как в игре.
 .dAddonBasic {
-  color: $gameAccentGreen;
+  color: $gameAccentBlueDark;
 }
 
 .dSoul {
@@ -385,9 +417,9 @@ $gameAccentEnhanced: #1cd45f;
   gap: 1px;
 }
 
-// Камни — отдельный, более светлый зелёно-бирюзовый,
-// отличный от голубого цвета аддонов и от золотого цвета имени предмета.
-.dStone { color: #66e3c1; }
+// Камни — светло-голубые, как в игре.
+.dStone { color: $gameAccentBlueLight; }
+.dStoneAddon { color: $gameAccentBlueLight; opacity: 0.85; }
 
 .dEngravings {
   margin-top: 6px;
@@ -465,7 +497,7 @@ $gameAccentEnhanced: #1cd45f;
 .dAstroSlotLabel { color: #6dc3ff; min-width: 60px; }
 .dAstroSlotLabelFate { color: $gameAccentRed; min-width: 60px; }
 
-.dAstroAddonName { color: $gameAccentBlue; flex: 1; }
+.dAstroAddonName { color: $gameAccentBlueDark; flex: 1; }
 .dAstroAptitude { color: var(--text-muted); font-size: 11px; }
 
 .dCard {

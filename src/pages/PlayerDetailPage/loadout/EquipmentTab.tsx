@@ -134,21 +134,20 @@ function SlotInner({
   const badge = badgeFor(item)
   const refine = refineFor(item)
   const itemName = decodeUnicodeEscapes(item.itemName) ?? `#${item.itemId}`
-  const titleParts: string[] = [itemName]
-  if (refine) titleParts.push(`+${refine}`)
-  for (const addon of topAddonsFor(item)) titleParts.push(addon)
+  // Браузерный title не ставим — используется только кастомный <EquipmentItemTooltip />.
+  // На <img> также убираем родной title во избежание двойного тултипа.
   return (
     <span
       className={styles.slotCell}
       style={style}
-      title={titleParts.join('\n')}
       role="button"
       tabIndex={0}
+      aria-label={itemName}
     >
       {icon ? (
         <img
           src={icon}
-          alt={itemName}
+          alt=""
           className={styles.slotIcon}
           loading="lazy"
           onError={(e) => (e.currentTarget.style.display = 'none')}
@@ -186,32 +185,5 @@ function refineFor(item: EquipItem): number | null {
     }
   }
   return null
-}
-
-/** Список «addon name + value» для подписи слота при ховере. */
-function topAddonsFor(item: EquipItem): string[] {
-  const lines: string[] = []
-  const refineAddonId =
-    item.essence?.weapon?.levelupAddonId ??
-    item.essence?.armor?.levelupAddonId ??
-    item.essence?.decoration?.levelupAddonId ??
-    null
-  if (item.body?.properties) {
-    for (const p of item.body.properties) {
-      if (p.isEmbed) continue
-      if (p.addonId === refineAddonId) continue
-      const name = decodeUnicodeEscapes(p.addonName) ?? `addon #${p.addonId}`
-      const value = p.displayValue ?? (p.computedValue !== undefined ? `+${p.computedValue}` : '')
-      lines.push(`${name} ${value}`.trim())
-    }
-  }
-  if (item.body?.soul?.phaseStats) {
-    for (const s of item.body.soul.phaseStats) {
-      const name = decodeUnicodeEscapes(s.addonName) ?? `addon #${s.addonId}`
-      const value = s.displayValue ?? `+${s.value}`
-      lines.push(`${name} ${value}`.trim())
-    }
-  }
-  return lines
 }
 

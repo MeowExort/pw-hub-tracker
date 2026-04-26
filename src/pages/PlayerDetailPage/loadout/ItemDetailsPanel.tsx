@@ -76,14 +76,27 @@ export function ItemDetailsPanel({ item, embedded }: Props) {
         <PropertiesBlock item={item} refineAddonId={refineAddonId} />
       )}
 
-      {/* Камни в гнёздах (зелёным — отдельный цвет от аддонов и предметов) */}
+      {/* Камни в гнёздах. Имя — из items.Name (StoneName), а характеристика+значение —
+          из соответствующего item-property с IsEmbed=true: AddonName и Param0. Порядок
+          embed-свойств в bодиданных всегда соответствует порядку гнёзд. */}
       {item.body?.holes && item.body.holes.length > 0 && (
         <div className={styles.dStones}>
-          {item.body.holes.map((h, i) => (
-            <div key={i} className={styles.dStone}>
-              {decodeUnicodeEscapes(h.stoneName) ?? `Камень #${h.holeValue}`}
-            </div>
-          ))}
+          {item.body.holes.map((h, i) => {
+            const embed = embedAt(item, i)
+            const stoneName = decodeUnicodeEscapes(h.stoneName) ?? `Камень #${h.holeValue}`
+            const addonName = embed
+              ? decodeUnicodeEscapes(embed.addonName) ?? `addon #${embed.addonId}`
+              : null
+            const value = embed
+              ? embed.displayValue ?? (embed.computedValue !== undefined ? `+${embed.computedValue}` : '')
+              : null
+            return (
+              <div key={i} className={styles.dStone}>
+                {stoneName}
+                {addonName && <span className={styles.dStoneAddon}> · {addonName} {value}</span>}
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -554,6 +567,23 @@ function stripLeadingStars(name?: string): string {
 
 function hasEngraved(props: NonNullable<EquipItem['body']>['properties']): boolean {
   return props.some((p) => p.isEngraved)
+}
+
+/**
+ * Возвращает i-ое свойство-«embed» (камень в гнезде) из тела предмета. Серверный
+ * парсер сохраняет порядок embed-свойств идентично порядку <c>Holes</c>, так что
+ * можно сопоставлять по индексу.
+ */
+function embedAt(item: EquipItem, index: number) {
+  const props = item.body?.properties
+  if (!props) return undefined
+  let n = 0
+  for (const p of props) {
+    if (!p.isEmbed) continue
+    if (n === index) return p
+    n++
+  }
+  return undefined
 }
 
 function phaseName(phase: number): string {
