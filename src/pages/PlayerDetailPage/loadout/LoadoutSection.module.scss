@@ -284,7 +284,213 @@ $slot-size: 60px;
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Item details panel (правая колонка) ────────────────────────────── */
+/* ── Item details — игровой формат тултипа ────────────────────────── */
+
+$gameDetailsBg: #1b1c25;
+$gameAccentBlue: #7DCEFF;
+$gameAccentRed: #ff5f55;
+$gameAccentPurple: #b06bff;
+$gameAccentGold: #ffcb4a;
+$gameAccentGreen: #6cfb4b;
+$gameAccentEnhanced: #1cd45f;
+
+.detailsEmbedded {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #fff;
+  font-family: var(--font-family);
+}
+
+.dHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.dStars { color: $gameAccentGold; font-size: 14px; letter-spacing: 1px; }
+.dName  { color: $gameAccentGold; font-weight: 700; font-size: 15px; }
+.dCells { color: var(--text-secondary); font-size: 12px; }
+.dRefine { color: $gameAccentGold; font-weight: 700; }
+
+.dBound { color: var(--text-secondary); font-size: 12px; margin-bottom: 2px; }
+
+.dRow { color: #fff; }
+.dValueBase { color: #fff; }
+.dValueBaseInline { color: #fff; }
+.dValueEnhanced { color: $gameAccentEnhanced; font-weight: 600; }
+
+.dEngraved {
+  color: $gameAccentGold;
+  font-weight: 600;
+  margin: 2px 0;
+}
+
+.dReqs {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-top: 4px;
+  > div { line-height: 1.3; }
+}
+
+.dAddons {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 2px;
+}
+
+.dAddonBasic {
+  color: $gameAccentBlue;
+}
+
+.dSoul {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dSoulTitle {
+  color: $gameAccentRed;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.dCrystal {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dCrystalTitle {
+  color: $gameAccentPurple;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.dCrystalAddon {
+  color: $gameAccentRed;
+}
+
+.dCrystalDots {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.crystalDot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 6px currentColor;
+}
+
+.dStones {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dStone { color: $gameAccentBlue; }
+
+.dEngravings {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  color: $gameAccentGold;
+}
+
+.dMaker {
+  margin-top: 6px;
+  color: $gameAccentGreen;
+  font-weight: 500;
+}
+
+/* ── Astrolabe ─────────────────────────────────────────────────────── */
+
+.dAstro {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.dAstroFateRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(91, 127, 245, 0.08);
+  border: 1px solid rgba(91, 127, 245, 0.2);
+  border-radius: var(--radius-sm);
+}
+
+.dAstroFate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.dAstroFateStar {
+  font-size: 18px;
+  color: $gameAccentGold;
+  line-height: 1;
+}
+
+.dAstroFateValue {
+  color: #fff;
+  font-weight: 600;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.dAstroLevel {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.dAstroDestiny {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dAstroDestinyRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+}
+
+.dAstroSlotLabel { color: #6dc3ff; min-width: 60px; }
+.dAstroSlotLabelFate { color: $gameAccentRed; min-width: 60px; }
+
+.dAstroAddonName { color: $gameAccentBlue; flex: 1; }
+.dAstroAptitude { color: var(--text-muted); font-size: 11px; }
+
+.dCard {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 4px;
+}
+
+/* ── Item details panel (старый, оставлен для не-tooltip случаев) ── */
 
 .detailsPanel {
   background: var(--bg-secondary);
