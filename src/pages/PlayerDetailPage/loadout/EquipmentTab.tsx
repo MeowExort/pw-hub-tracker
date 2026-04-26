@@ -6,6 +6,7 @@ import {
   STYLE_SLOTS,
   itemIconUrl,
   slotLabel,
+  decodeUnicodeEscapes,
 } from './equipmentSlots'
 import { EquipmentItemTooltip } from './EquipmentItemTooltip'
 import styles from './LoadoutSection.module.scss'
@@ -43,9 +44,6 @@ interface PaperDollProps {
 function PaperDoll({ itemsByIndex }: PaperDollProps) {
   return (
     <div className={styles.dollGrid}>
-      <div className={styles.dollSilhouette} aria-hidden="true">
-        <Silhouette />
-      </div>
       {MAIN_LAYOUT.map((s) => {
         if (s.index < 0) {
           return (
@@ -135,18 +133,22 @@ function SlotInner({
   const icon = itemIconUrl(item.itemId)
   const badge = badgeFor(item)
   const refine = refineFor(item)
+  const itemName = decodeUnicodeEscapes(item.itemName) ?? `#${item.itemId}`
+  const titleParts: string[] = [itemName]
+  if (refine) titleParts.push(`+${refine}`)
+  for (const addon of topAddonsFor(item)) titleParts.push(addon)
   return (
     <span
       className={styles.slotCell}
       style={style}
-      title={item.itemName ?? `#${item.itemId}`}
+      title={titleParts.join('\n')}
       role="button"
       tabIndex={0}
     >
       {icon ? (
         <img
           src={icon}
-          alt={item.itemName ?? ''}
+          alt={itemName}
           className={styles.slotIcon}
           loading="lazy"
           onError={(e) => (e.currentTarget.style.display = 'none')}
@@ -186,15 +188,30 @@ function refineFor(item: EquipItem): number | null {
   return null
 }
 
-function Silhouette() {
-  return (
-    <svg viewBox="0 0 100 220" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="50" cy="30" rx="16" ry="20" stroke="currentColor" strokeWidth="1.5" fill="none" />
-      <path d="M30 60 Q50 55 70 60 L75 130 Q70 140 50 140 Q30 140 25 130 Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-      <path d="M30 65 L20 110 L25 115 L35 75" stroke="currentColor" strokeWidth="1.5" fill="none" />
-      <path d="M70 65 L80 110 L75 115 L65 75" stroke="currentColor" strokeWidth="1.5" fill="none" />
-      <path d="M40 140 L35 200 L42 205 L48 150" stroke="currentColor" strokeWidth="1.5" fill="none" />
-      <path d="M60 140 L65 200 L58 205 L52 150" stroke="currentColor" strokeWidth="1.5" fill="none" />
-    </svg>
-  )
+/** Список «addon name + value» для подписи слота при ховере. */
+function topAddonsFor(item: EquipItem): string[] {
+  const lines: string[] = []
+  const refineAddonId =
+    item.essence?.weapon?.levelupAddonId ??
+    item.essence?.armor?.levelupAddonId ??
+    item.essence?.decoration?.levelupAddonId ??
+    null
+  if (item.body?.properties) {
+    for (const p of item.body.properties) {
+      if (p.isEmbed) continue
+      if (p.addonId === refineAddonId) continue
+      const name = decodeUnicodeEscapes(p.addonName) ?? `addon #${p.addonId}`
+      const value = p.displayValue ?? (p.computedValue !== undefined ? `+${p.computedValue}` : '')
+      lines.push(`${name} ${value}`.trim())
+    }
+  }
+  if (item.body?.soul?.phaseStats) {
+    for (const s of item.body.soul.phaseStats) {
+      const name = decodeUnicodeEscapes(s.addonName) ?? `addon #${s.addonId}`
+      const value = s.displayValue ?? `+${s.value}`
+      lines.push(`${name} ${value}`.trim())
+    }
+  }
+  return lines
 }
+

@@ -1,5 +1,5 @@
 import type { EquipItem, ItemEssence } from '@/shared/types/loadout'
-import { crystalColorHex, crystalColorName } from './equipmentSlots'
+import { crystalColorHex, crystalColorName, decodeUnicodeEscapes } from './equipmentSlots'
 import styles from './LoadoutSection.module.scss'
 
 interface Props {
@@ -12,8 +12,9 @@ export function ItemDetailsPanel({ item, embedded }: Props) {
   const wrapperClass = embedded ? styles.detailsEmbedded : styles.detailsPanel
   const refine = refineLevel(item)
   const holesCount = item.body?.holes?.length ?? 0
-  const stars = leadingStars(item.itemName)
-  const baseName = item.itemName ? stripLeadingStars(item.itemName) : `#${item.itemId}`
+  const decodedName = decodeUnicodeEscapes(item.itemName)
+  const stars = leadingStars(decodedName)
+  const baseName = decodedName ? stripLeadingStars(decodedName) : `#${item.itemId}`
   const refineAddonId = essenceLevelupAddonId(item.essence)
 
   return (
@@ -72,14 +73,16 @@ export function ItemDetailsPanel({ item, embedded }: Props) {
 
       {/* Свойства предмета (после души/кристалла, если душа есть) */}
       {item.body?.soul && item.body.properties.length > 0 && (
-        <PropertiesBlock item={item} refineAddonId={refineAddonId} hideRefineLine />
+        <PropertiesBlock item={item} refineAddonId={refineAddonId} />
       )}
 
-      {/* Камни в гнёздах (голубым) */}
+      {/* Камни в гнёздах (зелёным — отдельный цвет от аддонов и предметов) */}
       {item.body?.holes && item.body.holes.length > 0 && (
         <div className={styles.dStones}>
           {item.body.holes.map((h, i) => (
-            <div key={i} className={styles.dStone}>{h.stoneName ?? `Камень #${h.holeValue}`}</div>
+            <div key={i} className={styles.dStone}>
+              {decodeUnicodeEscapes(h.stoneName) ?? `Камень #${h.holeValue}`}
+            </div>
           ))}
         </div>
       )}
@@ -88,7 +91,10 @@ export function ItemDetailsPanel({ item, embedded }: Props) {
       {item.body?.properties && hasEngraved(item.body.properties) && (
         <div className={styles.dEngravings}>
           {item.body.properties.filter((p) => p.isEngraved).map((p, i) => (
-            <div key={i}>{p.addonName ?? `addon #${p.addonId}`} {p.displayValue ?? p.computedValue ?? ''}</div>
+            <div key={i}>
+              {decodeUnicodeEscapes(p.addonName) ?? `addon #${p.addonId}`}{' '}
+              {p.displayValue ?? (p.computedValue !== undefined ? `+${p.computedValue}` : '')}
+            </div>
           ))}
         </div>
       )}
@@ -96,10 +102,12 @@ export function ItemDetailsPanel({ item, embedded }: Props) {
       {/* Астролябия — звёзды судьбы + аддоны */}
       {item.astrolabe && <AstrolabeBlock astrolabe={item.astrolabe} />}
       {item.atlas && <AtlasBlock atlas={item.atlas} />}
-      {item.card && <CardBlock card={item.card} />}
+      {item.card && <CardBlock card={item.card} essence={item.essence} />}
 
       {item.body?.makerName && (
-        <div className={styles.dMaker}>Создатель: {item.body.makerName}</div>
+        <div className={styles.dMaker}>
+          Создатель: {decodeUnicodeEscapes(item.body.makerName)}
+        </div>
       )}
     </div>
   )
@@ -240,22 +248,22 @@ function Requirements({ item }: { item: EquipItem }) {
 function PropertiesBlock({
   item,
   refineAddonId,
-  hideRefineLine,
 }: {
   item: EquipItem
   refineAddonId: number | null
-  hideRefineLine?: boolean
 }) {
   const props = item.body?.properties ?? []
   const lines = props
     .filter((p) => !p.isEmbed && !p.isEngraved)
-    .filter((p) => !(hideRefineLine && p.addonId === refineAddonId))
+    // Аддон заточки рисуется только как "+N" в базовых статах, не в общем списке.
+    .filter((p) => refineAddonId === null || p.addonId !== refineAddonId)
   if (lines.length === 0) return null
   return (
     <div className={styles.dAddons}>
       {lines.map((p, i) => (
         <div key={i} className={styles.dAddonBasic}>
-          {p.addonName ?? `addon #${p.addonId}`} {p.displayValue ?? p.computedValue ?? ''}
+          {decodeUnicodeEscapes(p.addonName) ?? `addon #${p.addonId}`}{' '}
+          {p.displayValue ?? (p.computedValue !== undefined ? `+${p.computedValue}` : '')}
         </div>
       ))}
     </div>
@@ -264,15 +272,16 @@ function PropertiesBlock({
 
 function SoulBlock({ soul }: { soul: NonNullable<NonNullable<EquipItem['body']>['soul']> }) {
   const phaseLabel = soul.unlockedPhase > 0 ? `фаза ${phaseName(soul.unlockedPhase)} ${soul.maxPhase} ранга` : null
-  const title = soul.soulItemName
-    ? `[${stripLeadingStars(soul.soulItemName)}${phaseLabel ? ` - ${phaseLabel}` : ''}]`
+  const decodedSoulName = decodeUnicodeEscapes(soul.soulItemName)
+  const title = decodedSoulName
+    ? `[${stripLeadingStars(decodedSoulName)}${phaseLabel ? ` - ${phaseLabel}` : ''}]`
     : '[Душа]'
   return (
     <div className={styles.dSoul}>
       <div className={styles.dSoulTitle}>{title}</div>
       {soul.phaseStats.map((s, i) => (
         <div key={i} className={styles.dAddonBasic}>
-          {s.addonName ?? `addon #${s.addonId}`} {s.displayValue ?? `+${s.value}`}
+          {decodeUnicodeEscapes(s.addonName) ?? `addon #${s.addonId}`} {s.displayValue ?? `+${s.value}`}
         </div>
       ))}
     </div>
@@ -286,19 +295,22 @@ function CrystalBlock({
 }) {
   const stars = '★'.repeat(Math.max(crystal.rank, 1))
   const colorName = crystalColorName(crystal.baseColor)
-  const title = crystal.crystalItemName ?? `Кристалл (ур.${crystal.level})`
+  const title = decodeUnicodeEscapes(crystal.crystalItemName) ?? `Кристалл (ур.${crystal.level})`
+  // Цвет названия кристалла = базовый цвет самого кристалла (красн./зел./син./лил./жёлт.).
+  const titleColor = crystalColorHex(crystal.baseColor)
   return (
     <div className={styles.dCrystal}>
-      <div className={styles.dCrystalTitle}>
+      <div className={styles.dCrystalTitle} style={{ color: titleColor }}>
         [ {stars} {colorName} {stripLeadingStars(title)} ]
       </div>
       {crystal.effects.map((e, i) => {
         // Эффекты кристалла бывают двух типов:
         //  - "название умения N ур." с описанием (skill-like) → красный, дальше курсив с переносом.
         //  - простой стат (Бонус к уровню +6 / Боевой дух +20) → красный, в строку.
-        const text = `${e.addonName ?? `addon #${e.addonId}`} ${e.displayValue ?? `+${e.value}`}`
+        const name = decodeUnicodeEscapes(e.addonName) ?? `addon #${e.addonId}`
+        const value = e.displayValue ?? `+${e.value}`
         return (
-          <div key={i} className={styles.dCrystalAddon}>{text}</div>
+          <div key={i} className={styles.dCrystalAddon}>{name} {value}</div>
         )
       })}
       {crystal.insertionOrder.length > 0 && (
@@ -343,7 +355,7 @@ function AstrolabeBlock({ astrolabe }: { astrolabe: NonNullable<EquipItem['astro
             <div key={a.virtualSlot} className={styles.dAstroDestinyRow}>
               <span className={styles.dAstroSlotLabel}>Судьба</span>
               <span className={styles.dAstroAddonName}>
-                {a.addonName ?? `addon #${a.addonId}`} +{a.value}
+                {decodeUnicodeEscapes(a.addonName) ?? `addon #${a.addonId}`} +{a.value}
               </span>
               <span className={styles.dAstroAptitude}>(апт. {a.slotAptitude})</span>
             </div>
@@ -356,7 +368,7 @@ function AstrolabeBlock({ astrolabe }: { astrolabe: NonNullable<EquipItem['astro
             <div key={a.virtualSlot} className={styles.dAstroDestinyRow}>
               <span className={styles.dAstroSlotLabelFate}>Фатум</span>
               <span className={styles.dAstroAddonName}>
-                {a.addonName ?? `addon #${a.addonId}`} +{a.value}
+                {decodeUnicodeEscapes(a.addonName) ?? `addon #${a.addonId}`} +{a.value}
               </span>
               <span className={styles.dAstroAptitude}>(апт. {a.slotAptitude})</span>
             </div>
@@ -376,14 +388,118 @@ function AtlasBlock({ atlas }: { atlas: NonNullable<EquipItem['atlas']> }) {
   )
 }
 
-function CardBlock({ card }: { card: NonNullable<EquipItem['card']> }) {
+function CardBlock({
+  card,
+  essence,
+}: {
+  card: NonNullable<EquipItem['card']>
+  essence?: ItemEssence
+}) {
+  const poker = essence?.poker
+  const rankLabel = cardRankLabel(card.rank)
+  const typeLabel = cardTypeLabel(poker?.subType ?? card.type)
+
+  // Прирост от уровня: base + (level - 1) * inc.
+  // Перерождения дают мультипликатор: 1 + 0.25 * rebirthTimes (приближение к игровой формуле).
+  const lvlMul = Math.max(card.level - 1, 0)
+  const rbMul = 1 + 0.25 * card.rebirthTimes
+  const calc = (base: number, inc: number) =>
+    Math.floor((base + inc * lvlMul) * rbMul)
+
+  const statRows: Array<[string, number]> = []
+  if (poker) {
+    if (poker.hp > 0 || poker.incHp > 0) statRows.push(['Здоровье', calc(poker.hp, poker.incHp)])
+    if (poker.damage > 0 || poker.incDamage > 0) statRows.push(['Физ. атака', calc(poker.damage, poker.incDamage)])
+    if (poker.magicDamage > 0 || poker.incMagicDamage > 0) statRows.push(['Маг. атака', calc(poker.magicDamage, poker.incMagicDamage)])
+    if (poker.defence > 0 || poker.incDefence > 0) statRows.push(['Защита', calc(poker.defence, poker.incDefence)])
+    if (poker.metalDef > 0 || poker.incMetalDef > 0) statRows.push(['Защита от металла', calc(poker.metalDef, poker.incMetalDef)])
+    if (poker.woodDef > 0 || poker.incWoodDef > 0) statRows.push(['Защита от дерева', calc(poker.woodDef, poker.incWoodDef)])
+    if (poker.waterDef > 0 || poker.incWaterDef > 0) statRows.push(['Защита от воды', calc(poker.waterDef, poker.incWaterDef)])
+    if (poker.fireDef > 0 || poker.incFireDef > 0) statRows.push(['Защита от огня', calc(poker.fireDef, poker.incFireDef)])
+    if (poker.earthDef > 0 || poker.incEarthDef > 0) statRows.push(['Защита от земли', calc(poker.earthDef, poker.incEarthDef)])
+    if (poker.vigour > 0 || poker.incVigour > 0) statRows.push(['Боевой дух', calc(poker.vigour, poker.incVigour)])
+  }
+
+  const addons = (poker?.addons ?? []).filter((a) => a.addonId)
+
   return (
     <div className={styles.dCard}>
-      <div className={styles.dRow}><span>Уровень: </span><span className={styles.dValueBase}>{card.level}/{card.maxLevel}</span></div>
-      <div className={styles.dRow}><span>Перерождений: </span><span className={styles.dValueBase}>{'★'.repeat(card.rebirthTimes)}</span></div>
-      <div className={styles.dRow}><span>Опыт: </span><span className={styles.dValueBase}>{card.exp.toLocaleString()}</span></div>
+      {(rankLabel || typeLabel) && (
+        <div className={styles.dCardHeader}>
+          {rankLabel && <span className={styles.dCardRank}>[{rankLabel}]</span>}
+          {typeLabel && <span className={styles.dCardType}>{typeLabel}</span>}
+        </div>
+      )}
+      <div className={styles.dRow}>
+        <span>Уровень: </span>
+        <span className={styles.dValueBase}>{card.level}/{poker?.maxLevel ?? card.maxLevel}</span>
+      </div>
+      {card.rebirthTimes > 0 && (
+        <div className={styles.dRow}>
+          <span>Перерождений: </span>
+          <span className={styles.dValueBase}>{'★'.repeat(card.rebirthTimes)} ({card.rebirthTimes})</span>
+        </div>
+      )}
+      {statRows.length > 0 && (
+        <div className={styles.dCardStats}>
+          {statRows.map(([label, value]) => (
+            <div key={label} className={styles.dRow}>
+              <span>{label}: </span>
+              <span className={styles.dValueBase}>+{value.toLocaleString()}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {addons.length > 0 && (
+        <div className={styles.dCardAddons}>
+          {addons.map((a, i) => (
+            <div key={i} className={styles.dAddonBasic}>
+              {decodeUnicodeEscapes(a.addonName) ?? `addon #${a.addonId}`}
+            </div>
+          ))}
+        </div>
+      )}
+      {(poker?.requireLevel ?? card.requireLevel) > 0 && (
+        <div className={styles.dReqs}>
+          <div>Требуемый уровень: {poker?.requireLevel ?? card.requireLevel}</div>
+          {card.requireLeadership > 0 && (
+            <div>Требуемое лидерство: {card.requireLeadership}</div>
+          )}
+        </div>
+      )}
+      <div className={styles.dRow}>
+        <span>Опыт: </span>
+        <span className={styles.dValueBase}>{card.exp.toLocaleString()}</span>
+        {poker && poker.swallowExp > 0 && (
+          <span className={styles.dCardSwallow}> · поглощение {poker.swallowExp.toLocaleString()}</span>
+        )}
+      </div>
     </div>
   )
+}
+
+function cardRankLabel(rank: number): string {
+  // Игровые ранги карт: 1..5+. Разные сервера используют разные обозначения,
+  // здесь применяем распространённую схему: 1=C, 2=B, 3=A, 4=S, 5=S+, 6+=SS+.
+  const map: Record<number, string> = { 1: 'C', 2: 'B', 3: 'A', 4: 'S', 5: 'S+' }
+  if (rank <= 0) return ''
+  if (rank > 5) return `${'S'.repeat(rank - 4)}+`
+  return map[rank] ?? String(rank)
+}
+
+function cardTypeLabel(subType: number): string {
+  // Типы карт-генералов в RU-локализации Perfect World.
+  // Если сервер вернул другое значение — показываем «Тип N».
+  const map: Record<number, string> = {
+    1: 'Разрушение',
+    2: 'Уничтожение',
+    3: 'Долголетие',
+    4: 'Здоровье',
+    5: 'Тайна',
+    6: 'Загадка',
+  }
+  if (!subType) return ''
+  return map[subType] ?? `Тип ${subType}`
 }
 
 // ── helpers ─────────────────────────────────────────────────────────

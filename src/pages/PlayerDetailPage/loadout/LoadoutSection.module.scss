@@ -109,10 +109,7 @@ $slot-size: 60px;
 
 .dollGrid {
   display: grid;
-  grid-template-columns:
-    $slot-size $slot-size $slot-size
-    100px
-    $slot-size $slot-size $slot-size;
+  grid-template-columns: repeat(6, $slot-size);
   grid-template-rows: repeat(4, $slot-size);
   gap: 6px;
   width: fit-content;
@@ -120,21 +117,6 @@ $slot-size: 60px;
   background: linear-gradient(135deg, #1a1c24 0%, #15171f 100%);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-}
-
-.dollSilhouette {
-  grid-column: 4;
-  grid-row: 1 / -1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  opacity: 0.4;
-
-  svg {
-    width: 70%;
-    height: 90%;
-  }
 }
 
 .slotReserved {
@@ -346,8 +328,9 @@ $gameAccentEnhanced: #1cd45f;
   margin-top: 2px;
 }
 
+// Аддоны — салатовый, отличный от золотого имени предмета и бирюзового цвета камней.
 .dAddonBasic {
-  color: $gameAccentBlue;
+  color: $gameAccentGreen;
 }
 
 .dSoul {
@@ -402,7 +385,9 @@ $gameAccentEnhanced: #1cd45f;
   gap: 1px;
 }
 
-.dStone { color: $gameAccentBlue; }
+// Камни — отдельный, более светлый зелёно-бирюзовый,
+// отличный от голубого цвета аддонов и от золотого цвета имени предмета.
+.dStone { color: #66e3c1; }
 
 .dEngravings {
   margin-top: 6px;
@@ -488,6 +473,45 @@ $gameAccentEnhanced: #1cd45f;
   flex-direction: column;
   gap: 1px;
   margin-top: 4px;
+}
+
+.dCardHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.dCardRank {
+  color: $gameAccentGold;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+.dCardType {
+  color: $gameAccentPurple;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.dCardStats {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 4px;
+}
+
+.dCardAddons {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 4px;
+}
+
+.dCardSwallow {
+  color: var(--text-secondary);
+  font-size: 12px;
 }
 
 /* ── Item details panel (старый, оставлен для не-tooltip случаев) ── */
