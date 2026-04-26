@@ -116,6 +116,10 @@ export function ItemDetailsPanel({ item, embedded }: Props) {
       {item.astrolabe && <AstrolabeBlock astrolabe={item.astrolabe} />}
       {item.atlas && <AtlasBlock atlas={item.atlas} />}
       {item.card && <CardBlock card={item.card} essence={item.essence} />}
+      {/* Трактат: список аддонов «имя + значение» из bible-эссенции. */}
+      {item.essence?.kind === 'bible' && item.essence.bible && (
+        <BibleBlock bible={item.essence.bible} />
+      )}
 
       {item.body?.makerName && (
         <div className={styles.dMaker}>
@@ -465,11 +469,16 @@ function CardBlock({
       )}
       {addons.length > 0 && (
         <div className={styles.dCardAddons}>
-          {addons.map((a, i) => (
-            <div key={i} className={styles.dAddonBasic}>
-              {decodeUnicodeEscapes(a.addonName) ?? `addon #${a.addonId}`}
-            </div>
-          ))}
+          {addons.map((a, i) => {
+            const name = decodeUnicodeEscapes(a.addonName) ?? `addon #${a.addonId}`
+            const value = a.displayValue
+              ?? (a.value !== undefined && a.value !== 0 ? `+${a.value}` : '')
+            return (
+              <div key={i} className={styles.dAddonBasic}>
+                {name}{value ? ` ${value}` : ''}
+              </div>
+            )
+          })}
         </div>
       )}
       {(poker?.requireLevel ?? card.requireLevel) > 0 && (
@@ -487,6 +496,29 @@ function CardBlock({
           <span className={styles.dCardSwallow}> · поглощение {poker.swallowExp.toLocaleString()}</span>
         )}
       </div>
+    </div>
+  )
+}
+
+function BibleBlock({
+  bible,
+}: {
+  bible: NonNullable<ItemEssence['bible']>
+}) {
+  const addons = bible.addons.filter((a) => a.addonId)
+  if (addons.length === 0) return null
+  return (
+    <div className={styles.dCardAddons}>
+      {addons.map((a, i) => {
+        const name = decodeUnicodeEscapes(a.addonName) ?? `addon #${a.addonId}`
+        const value = a.displayValue
+          ?? (a.value !== undefined && a.value !== 0 ? `+${a.value}` : '')
+        return (
+          <div key={i} className={styles.dAddonBasic}>
+            {name}{value ? ` ${value}` : ''}
+          </div>
+        )
+      })}
     </div>
   )
 }

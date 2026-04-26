@@ -317,6 +317,10 @@ export interface EssenceAddonRef {
   slot: number
   addonId?: number
   addonName?: string
+  /** Шаблонное значение из addons.Param1. */
+  value?: number
+  /** Отформатированное значение «как в игре» (+5%, +0.10, +280 и т.п.). */
+  displayValue?: string
 }
 
 export interface SkillRunesSnapshot {
