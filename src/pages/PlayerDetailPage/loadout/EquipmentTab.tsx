@@ -3,8 +3,9 @@ import type { EquipItem, EquipmentSnapshot } from '@/shared/types/loadout'
 import {
   MAIN_LAYOUT,
   POKER_SLOTS,
-  SPECIAL_SLOTS,
+  STYLE_SLOTS,
   itemIconUrl,
+  slotLabel,
 } from './equipmentSlots'
 import { ItemDetailsPanel } from './ItemDetailsPanel'
 import styles from './LoadoutSection.module.scss'
@@ -20,14 +21,14 @@ export function EquipmentTab({ equipment }: Props) {
     return m
   }, [equipment])
 
-  // По умолчанию выделяем оружие (slot 0) или первый ненулевой слот.
+  // По умолчанию выделяем оружие или первый ненулевой слот.
   const initialSlot = useMemo(() => {
     if (itemsByIndex.has(0)) return 0
     const first = equipment.items[0]
-    return first ? first.slotIndex : 0
+    return first ? first.slotIndex : -1
   }, [itemsByIndex, equipment.items])
   const [selected, setSelected] = useState<number>(initialSlot)
-  const selectedItem = itemsByIndex.get(selected)
+  const selectedItem = selected >= 0 ? itemsByIndex.get(selected) : undefined
 
   return (
     <div className={styles.equipmentLayout}>
@@ -35,16 +36,16 @@ export function EquipmentTab({ equipment }: Props) {
         <PaperDoll itemsByIndex={itemsByIndex} selected={selected} onSelect={setSelected} />
 
         <SpecialRow
-          title="Спец. слоты"
-          slots={SPECIAL_SLOTS}
+          title="Карты генерала"
+          slots={POKER_SLOTS}
           itemsByIndex={itemsByIndex}
           selected={selected}
           onSelect={setSelected}
         />
 
         <SpecialRow
-          title="Карты генерала"
-          slots={POKER_SLOTS}
+          title="Стиль"
+          slots={STYLE_SLOTS}
           itemsByIndex={itemsByIndex}
           selected={selected}
           onSelect={setSelected}
@@ -78,44 +79,54 @@ function PaperDoll({ itemsByIndex, selected, onSelect }: PaperDollProps) {
       <div className={styles.dollSilhouette} aria-hidden="true">
         <Silhouette />
       </div>
-      {MAIN_LAYOUT.map((s) => (
-        <SlotCell
-          key={s.index}
-          row={s.row}
-          col={s.col}
-          label={s.label}
-          item={itemsByIndex.get(s.index)}
-          active={selected === s.index}
-          onClick={() => itemsByIndex.has(s.index) && onSelect(s.index)}
-        />
-      ))}
+      {MAIN_LAYOUT.map((s) => {
+        // -1 = зарезервированная пустота (для выравнивания сетки).
+        if (s.index < 0) {
+          return (
+            <div
+              key={`reserved-${s.row}-${s.col}`}
+              className={`${styles.slotCell} ${styles.slotReserved}`}
+              style={{ gridRow: s.row, gridColumn: s.col }}
+              aria-hidden="true"
+            />
+          )
+        }
+        return (
+          <SlotCell
+            key={s.index}
+            row={s.row}
+            col={s.col}
+            label={slotLabel(s.index)}
+            item={itemsByIndex.get(s.index)}
+            active={selected === s.index}
+            onClick={() => itemsByIndex.has(s.index) && onSelect(s.index)}
+          />
+        )
+      })}
     </div>
   )
 }
 
 interface SpecialRowProps {
   title: string
-  slots: { index: number; label: string }[]
+  slots: number[]
   itemsByIndex: Map<number, EquipItem>
   selected: number
   onSelect: (slot: number) => void
 }
 
 function SpecialRow({ title, slots, itemsByIndex, selected, onSelect }: SpecialRowProps) {
-  // Скрываем строку, если ни в одном слоте нет данных.
-  const hasAny = slots.some((s) => itemsByIndex.has(s.index))
-  if (!hasAny) return null
   return (
     <div className={styles.dollSection}>
       <h3 className={styles.dollSectionTitle}>{title}</h3>
       <div className={styles.specialRow}>
-        {slots.map((s) => (
+        {slots.map((idx) => (
           <SlotCell
-            key={s.index}
-            label={s.label}
-            item={itemsByIndex.get(s.index)}
-            active={selected === s.index}
-            onClick={() => itemsByIndex.has(s.index) && onSelect(s.index)}
+            key={idx}
+            label={slotLabel(idx)}
+            item={itemsByIndex.get(idx)}
+            active={selected === idx}
+            onClick={() => itemsByIndex.has(idx) && onSelect(idx)}
           />
         ))}
       </div>
@@ -138,7 +149,6 @@ function SlotCell({ label, item, active, onClick, row, col }: SlotCellProps) {
     style.gridRow = row
     style.gridColumn = col
   }
-  if (active) style.borderColor = 'var(--primary)'
 
   if (!item) {
     return (
@@ -191,16 +201,16 @@ function badgeFor(item: EquipItem): string | null {
   return null
 }
 
-/** Уровень заточки оружия/брони из displayValue Levelup-аддона.
- *  В реальной игре пишется как +12, +11 и т.д. — пока берём наибольший integer
- *  из последнего параметра в Properties (если такой паттерн встретился). */
 function refineFor(item: EquipItem): number | null {
-  // Смотрим на StoneMask/properties: на сервере мы храним отдельный addon-флаг
-  // для Levelup, но без точного маппинга. Используем эвристику: первый property
-  // с двумя параметрами, второй из которых ≤ 12 — это как правило уровень рефайна.
   if (!item.body?.properties?.length) return null
   for (const p of item.body.properties) {
-    if (p.params.length >= 2 && p.params[1] >= 1 && p.params[1] <= 12 && !p.isEmbed && !p.isEngraved) {
+    if (
+      p.params.length >= 2 &&
+      p.params[1] >= 1 &&
+      p.params[1] <= 12 &&
+      !p.isEmbed &&
+      !p.isEngraved
+    ) {
       return p.params[1]
     }
   }
@@ -208,7 +218,6 @@ function refineFor(item: EquipItem): number | null {
 }
 
 function Silhouette() {
-  // Стилизованный SVG-силуэт персонажа (gender-neutral) для центра paper doll.
   return (
     <svg viewBox="0 0 100 220" fill="none" xmlns="http://www.w3.org/2000/svg">
       <ellipse cx="50" cy="30" rx="16" ry="20" stroke="currentColor" strokeWidth="1.5" fill="none" />

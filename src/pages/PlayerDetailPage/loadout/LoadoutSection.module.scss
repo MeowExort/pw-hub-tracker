@@ -109,7 +109,10 @@ $slot-size: 60px;
 
 .dollGrid {
   display: grid;
-  grid-template-columns: $slot-size $slot-size 100px $slot-size $slot-size;
+  grid-template-columns:
+    $slot-size $slot-size $slot-size
+    100px
+    $slot-size $slot-size $slot-size;
   grid-template-rows: repeat(4, $slot-size);
   gap: 6px;
   width: fit-content;
@@ -120,7 +123,7 @@ $slot-size: 60px;
 }
 
 .dollSilhouette {
-  grid-column: 3;
+  grid-column: 4;
   grid-row: 1 / -1;
   display: flex;
   align-items: center;
@@ -132,6 +135,13 @@ $slot-size: 60px;
     width: 70%;
     height: 90%;
   }
+}
+
+.slotReserved {
+  background: transparent !important;
+  border-color: transparent !important;
+  cursor: default;
+  pointer-events: none;
 }
 
 .slotCell {
