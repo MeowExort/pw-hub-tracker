@@ -114,20 +114,20 @@ function SlotCell({ label, item, row, col }: SlotCellProps) {
     )
   }
 
+  // Стиль с gridRow/gridColumn вешаем на сам tooltipWrapper, потому что именно он
+  // является прямым потомком .dollGrid и попадает под действие grid-раскладки.
   return (
-    <EquipmentItemTooltip item={item}>
-      <SlotInner item={item} style={style} label={label} />
+    <EquipmentItemTooltip item={item} style={style}>
+      <SlotInner item={item} label={label} />
     </EquipmentItemTooltip>
   )
 }
 
 function SlotInner({
   item,
-  style,
   label,
 }: {
   item: EquipItem
-  style: React.CSSProperties
   label: string
 }) {
   const icon = itemIconUrl(item.itemId)
@@ -136,10 +136,10 @@ function SlotInner({
   const itemName = decodeUnicodeEscapes(item.itemName) ?? `#${item.itemId}`
   // Браузерный title не ставим — используется только кастомный <EquipmentItemTooltip />.
   // На <img> также убираем родной title во избежание двойного тултипа.
+  // Grid-раскладка применяется к внешнему tooltipWrapper, см. SlotCell.
   return (
     <span
       className={styles.slotCell}
-      style={style}
       role="button"
       tabIndex={0}
       aria-label={itemName}

@@ -7,6 +7,12 @@ import styles from './LoadoutSection.module.scss'
 interface Props {
   item: EquipItem
   children: ReactNode
+  /**
+   * CSS-стиль для самого wrapper-spans. Нужен, чтобы grid-row/grid-column
+   * попадали на прямого ребёнка grid-контейнера (sам span tooltipWrapper),
+   * иначе grid auto-flow проигнорирует raskладку MAIN_LAYOUT.
+   */
+  style?: React.CSSProperties
 }
 
 /**
@@ -14,7 +20,7 @@ interface Props {
  * Логика позиционирования по образцу <c>shared/ui/ItemTooltip</c>:
  * портал в document.body, авто-репозиционирование если выходит за окно.
  */
-export function EquipmentItemTooltip({ item, children }: Props) {
+export function EquipmentItemTooltip({ item, children, style }: Props) {
   const [visible, setVisible] = useState(false)
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
   const wrapperRef = useRef<HTMLSpanElement>(null)
@@ -69,6 +75,7 @@ export function EquipmentItemTooltip({ item, children }: Props) {
     <span
       ref={wrapperRef}
       className={styles.tooltipWrapper}
+      style={style}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
       onFocus={handleEnter}
