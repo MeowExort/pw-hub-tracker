@@ -1,65 +1,73 @@
 /**
- * Раскладка слотов экипировки на «paper doll» сетке.
- * Соответствует <c>EQUIP_INDEX_*</c> из <c>server_source/cgame/gs/item.h</c>.
- *
- * Координаты — это индексы CSS-grid-cells (1-based) в layout 4×6:
+ * Раскладка слотов экипировки в стиле игрового UI Perfect World.
+ * Сетка 5 колонок × 4 ряда: col1-2 = левая часть, col3 = силуэт персонажа,
+ * col4-5 = правая часть. Соответствует <c>EQUIP_INDEX_*</c> из <c>item.h</c>.
  *
  * ```
- *   col1     col2     col3      col4
- * ┌────────┬────────┬─────────┬────────┐
- * │ Weapon │ Head   │ Necklace│ Should │
- * │ Body   │ Waist  │ Leg     │ Foot   │
- * │ Wrist  │ Ring1  │ Ring2   │ Cape   │
- * │ Bible  │ Atlas  │ Wing    │Astrol. │
- * │ Poker0 │ Poker1 │ Poker2  │ Poker3 │
- * │ Poker4 │ Poker5 │         │        │
- * └────────┴────────┴─────────┴────────┘
+ *   col1     col2     col3        col4      col5
+ * ┌────────┬────────┬──────────┬────────┬────────┐
+ * │ Полёт  │        │          │        │ Шлем   │
+ * │ s29    │        │          │        │ s1     │
+ * ├────────┼────────┤ силуэт   ├────────┼────────┤
+ * │ Ожер.  │ Накид. │ персон.  │        │ Броня  │
+ * │ s2     │ s12    │          │        │ s4     │
+ * ├────────┼────────┤          ├────────┼────────┤
+ * │ Наручи │ Ремень │          │ Штаны  │ Оружие │
+ * │ s8     │ s5     │          │ s6     │ s0     │
+ * ├────────┼────────┤          ├────────┼────────┤
+ * │ Кольцо │ Кольцо │          │ Астро. │ Ботин. │
+ * │ s9     │ s10    │          │ s38    │ s7     │
+ * └────────┴────────┴──────────┴────────┴────────┘
  * ```
+ *
+ * Под основной сеткой — ряды:
+ *   • Спец-слоты (Трактат s18, Атлас s26)
+ *   • Карты генерала (s32..37)
  */
 
-export interface SlotConfig {
-  /** server_source EQUIP_INDEX_* */
+export interface MainSlotConfig {
   index: number
-  /** короткая русская подпись (показывается под пустым слотом) */
   label: string
-  /** в какой ряд ставить (1..6) */
-  row: number
-  /** в какую колонку ставить (1..4) */
-  col: number
-  /** Группа: основная экипировка, карты генерала, спец-слоты */
-  group: 'main' | 'special' | 'poker'
+  row: number  // 1..4
+  col: number  // 1, 2, 4, 5
 }
 
-export const EQUIPMENT_SLOTS: SlotConfig[] = [
-  { index: 0, label: 'Оружие', row: 1, col: 1, group: 'main' },
-  { index: 1, label: 'Шлем', row: 1, col: 2, group: 'main' },
-  { index: 2, label: 'Ожерелье', row: 1, col: 3, group: 'main' },
-  { index: 3, label: 'Плечи', row: 1, col: 4, group: 'main' },
-  { index: 4, label: 'Тело', row: 2, col: 1, group: 'main' },
-  { index: 5, label: 'Пояс', row: 2, col: 2, group: 'main' },
-  { index: 6, label: 'Ноги', row: 2, col: 3, group: 'main' },
-  { index: 7, label: 'Сапоги', row: 2, col: 4, group: 'main' },
-  { index: 8, label: 'Запястья', row: 3, col: 1, group: 'main' },
-  { index: 9, label: 'Кольцо', row: 3, col: 2, group: 'main' },
-  { index: 10, label: 'Кольцо', row: 3, col: 3, group: 'main' },
-  { index: 12, label: 'Накидка', row: 3, col: 4, group: 'main' },
-  { index: 18, label: 'Трактат', row: 4, col: 1, group: 'special' },
-  { index: 26, label: 'Атлас', row: 4, col: 2, group: 'special' },
-  { index: 29, label: 'Крылья', row: 4, col: 3, group: 'special' },
-  { index: 38, label: 'Астролябия', row: 4, col: 4, group: 'special' },
-  { index: 32, label: 'Карта 1', row: 5, col: 1, group: 'poker' },
-  { index: 33, label: 'Карта 2', row: 5, col: 2, group: 'poker' },
-  { index: 34, label: 'Карта 3', row: 5, col: 3, group: 'poker' },
-  { index: 35, label: 'Карта 4', row: 5, col: 4, group: 'poker' },
-  { index: 36, label: 'Карта 5', row: 6, col: 1, group: 'poker' },
-  { index: 37, label: 'Карта 6', row: 6, col: 2, group: 'poker' },
+export const MAIN_LAYOUT: MainSlotConfig[] = [
+  { index: 29, label: 'Полёт', row: 1, col: 1 },
+  { index: 1, label: 'Шлем', row: 1, col: 5 },
+  { index: 2, label: 'Ожерелье', row: 2, col: 1 },
+  { index: 12, label: 'Накидка', row: 2, col: 2 },
+  { index: 4, label: 'Броня', row: 2, col: 5 },
+  { index: 8, label: 'Наручи', row: 3, col: 1 },
+  { index: 5, label: 'Ремень', row: 3, col: 2 },
+  { index: 6, label: 'Штаны', row: 3, col: 4 },
+  { index: 0, label: 'Оружие', row: 3, col: 5 },
+  { index: 9, label: 'Кольцо 1', row: 4, col: 1 },
+  { index: 10, label: 'Кольцо 2', row: 4, col: 2 },
+  { index: 38, label: 'Астролябия', row: 4, col: 4 },
+  { index: 7, label: 'Ботинки', row: 4, col: 5 },
 ]
 
-const SLOT_BY_INDEX = new Map<number, SlotConfig>(EQUIPMENT_SLOTS.map((s) => [s.index, s]))
-
-export function getSlotConfig(index: number): SlotConfig | undefined {
-  return SLOT_BY_INDEX.get(index)
+export interface SpecialSlotConfig {
+  index: number
+  label: string
 }
+
+/** Спец-слоты под основной сеткой. */
+export const SPECIAL_SLOTS: SpecialSlotConfig[] = [
+  { index: 18, label: 'Трактат' },
+  { index: 26, label: 'Атлас' },
+]
+
+/** Слоты карт генерала. */
+export const POKER_SLOTS: SpecialSlotConfig[] = [
+  { index: 32, label: 'Карта 1' },
+  { index: 33, label: 'Карта 2' },
+  { index: 34, label: 'Карта 3' },
+  { index: 35, label: 'Карта 4' },
+  { index: 36, label: 'Карта 5' },
+  { index: 37, label: 'Карта 6' },
+]
 
 /** URL CDN-иконки предмета (конвенция Pw.Hub). */
 export function itemIconUrl(itemId?: number): string | undefined {
@@ -76,10 +84,4 @@ export function crystalColorName(value: number): string {
 
 export function crystalColorHex(value: number): string {
   return CRYSTAL_COLOR_HEX[value] ?? '#888'
-}
-
-/** Звёздочки заточки реликвии (0..20). */
-export function refineStars(level: number): string {
-  const n = Math.max(0, Math.min(20, level))
-  return '★'.repeat(n) + '☆'.repeat(Math.max(0, 12 - n))
 }

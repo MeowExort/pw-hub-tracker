@@ -103,44 +103,70 @@
   padding: var(--space-xl) 0;
 }
 
-/* ── Equipment paper-doll grid ──────────────────────────────────────── */
+/* ── Equipment paper-doll (игровая раскладка) ───────────────────────── */
+
+$slot-size: 60px;
 
 .dollGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-sm);
-  max-width: 520px;
+  grid-template-columns: $slot-size $slot-size 100px $slot-size $slot-size;
+  grid-template-rows: repeat(4, $slot-size);
+  gap: 6px;
+  width: fit-content;
+  padding: var(--space-sm);
+  background: linear-gradient(135deg, #1a1c24 0%, #15171f 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
 }
 
-.slotGroup {
-  display: contents;
+.dollSilhouette {
+  grid-column: 3;
+  grid-row: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  opacity: 0.4;
+
+  svg {
+    width: 70%;
+    height: 90%;
+  }
 }
 
 .slotCell {
   position: relative;
-  aspect-ratio: 1;
-  background: var(--bg-secondary);
+  width: $slot-size;
+  height: $slot-size;
+  background: linear-gradient(135deg, #2a2c36 0%, #1e2028 100%);
   border: 2px solid var(--border);
   border-radius: var(--radius-sm);
+  padding: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   cursor: pointer;
   transition: var(--transition-fast);
+  font-family: inherit;
 
-  &:hover {
+  &:hover:not(.slotEmpty) {
     border-color: var(--primary);
-    background: var(--card-hover);
+    transform: scale(1.05);
+    z-index: 2;
   }
 
-  &.empty {
+  &.slotActive {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary), 0 0 12px rgba(91, 127, 245, 0.4);
+  }
+
+  &.slotEmpty {
     cursor: default;
-    color: var(--text-muted);
-    font-size: 10px;
-    text-align: center;
-    padding: 4px;
+    background: linear-gradient(135deg, #1a1c24 0%, #15171f 100%);
+    border-color: var(--border);
+    border-style: dashed;
+    opacity: 0.5;
   }
 }
 
@@ -152,43 +178,66 @@
 
 .slotBadge {
   position: absolute;
-  bottom: 2px;
-  right: 4px;
-  font-size: 10px;
+  bottom: 1px;
+  right: 2px;
+  font-size: 9px;
   color: #fff;
   text-shadow: 0 0 3px #000, 0 0 3px #000, 0 1px 2px #000;
-  font-weight: 600;
+  font-weight: 700;
+  pointer-events: none;
+  letter-spacing: 0;
+}
+
+.slotRefine {
+  position: absolute;
+  top: 1px;
+  left: 2px;
+  font-size: 11px;
+  color: #ffcb4a;
+  text-shadow: 0 0 3px #000, 0 0 3px #000;
+  font-weight: 700;
   pointer-events: none;
 }
 
 .slotEmptyLabel {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--text-muted);
   text-align: center;
   user-select: none;
+  padding: 2px;
+  line-height: 1.1;
 }
 
 .dollSection {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
-
-  & + & {
-    margin-top: var(--space-md);
-  }
+  gap: 4px;
+  margin-top: var(--space-md);
 }
 
 .dollSectionTitle {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin: 0;
+  font-weight: 600;
+}
+
+.specialRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: var(--space-sm);
+  background: linear-gradient(135deg, #1a1c24 0%, #15171f 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  width: fit-content;
 }
 
 .equipmentLayout {
   display: grid;
-  grid-template-columns: minmax(0, 540px) minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr);
   gap: var(--space-lg);
   align-items: start;
 
