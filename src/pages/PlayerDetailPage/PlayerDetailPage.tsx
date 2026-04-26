@@ -18,6 +18,7 @@ import {
 } from '@/shared/utils/format'
 import { ScoreChart } from '../TeamDetailPage/ScoreChart'
 import { BuffIndicator } from '@/shared/ui/BuffIndicator'
+import { LoadoutSection } from './loadout/LoadoutSection'
 import styles from './PlayerDetailPage.module.scss'
 import alkorBg from '../../../assets/custom_bg/alkor_737617.png'
 
@@ -161,6 +162,11 @@ export function PlayerDetailPage() {
               })}
             </div>
           </div>
+        )}
+
+        {/* Снаряжение (экипировка / руны / реликвии) */}
+        {server && id > 0 && (
+          <LoadoutSection server={server} playerId={id} />
         )}
 
         {/* График рейтинга */}
