@@ -300,6 +300,10 @@ $slot-divider: 18px;
   max-width: 520px;
   max-height: calc(100vh - 32px);
   overflow-y: auto;
+  // Горизонтальный скролл резать жёстко — если внутренний блок (например,
+  // таблица астролябии) почему-то выталкивается за рамки, вертикальная
+  // полоса прокрутки не должна выезжать снизу.
+  overflow-x: hidden;
   pointer-events: none;
   animation: tooltipFadeIn 0.15s ease-out;
 }
@@ -476,10 +480,12 @@ $gameAccentEnhanced: #1cd45f;
 }
 
 // Двухколоночная раскладка: слева пентаграмма, справа список аддонов.
+// minmax(0, 1fr) для правой колонки нужен, чтобы grid-ребёнок мог сжаться
+// уже своего min-content и не вытолкнуть таблицу за рамки тултипа.
 .dAstroBlock {
   display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 12px;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 10px;
   align-items: center;
   padding: 6px 4px;
   background: rgba(91, 127, 245, 0.05);
@@ -488,19 +494,24 @@ $gameAccentEnhanced: #1cd45f;
 }
 
 .dAstroSvg {
-  width: 200px;
-  height: 200px;
+  width: 180px;
+  height: 180px;
   filter: drop-shadow(0 0 6px rgba(91, 127, 245, 0.35));
 }
 
 .dAstroAddonList {
   display: grid;
-  // Колонки: метка | аптитуда (ключ соответствия со звездой) | имя | значение (вправо).
-  grid-template-columns: auto auto 1fr auto;
+  // Колонки: метка | аптитуда (ключ соответствия со звездой) | имя (растягивается,
+  // но может сжаться) | значение (вправо). minmax(0, 1fr) разрешает третьей
+  // колонке сжаться до содержимого даже при длинных именах аддонов.
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   align-items: baseline;
   column-gap: 6px;
   row-gap: 2px;
   font-size: 12px;
+  // Без min-width: 0 grid-item с display:grid считается с min-content,
+  // и длинные имена выталкивают таблицу за правый край тултипа.
+  min-width: 0;
 }
 
 .dAstroRow {
@@ -515,8 +526,20 @@ $gameAccentEnhanced: #1cd45f;
   font-variant-numeric: tabular-nums;
   font-size: 11px;
 }
-.dAstroAddonName { color: $gameAccentBlueDark; white-space: nowrap; }
-.dAstroValue { color: #fff; text-align: right; font-variant-numeric: tabular-nums; }
+// Длинные имена аддонов оборачиваются по словам, чтобы не выталкивать колонку
+// значений за правый край тултипа.
+.dAstroAddonName {
+  color: $gameAccentBlueDark;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.dAstroValue {
+  color: #fff;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 
 .dAstroLevel {
   color: var(--text-secondary);
