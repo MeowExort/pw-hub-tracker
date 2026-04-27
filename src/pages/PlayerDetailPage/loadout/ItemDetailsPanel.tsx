@@ -429,52 +429,189 @@ function CrystalBlock({
 }
 
 function AstrolabeBlock({ astrolabe }: { astrolabe: NonNullable<EquipItem['astrolabe']> }) {
-  // 5 «звёзд судьбы» (Fate, чётные индексы 0/2/4/6/8) — внешний круг.
+  // 10 слотов: чётные (0/2/4/6/8) — Фатум (внешние вершины пентаграммы),
+  // нечётные (1/3/5/7/9) — Судьба (внутренние точки между вершинами).
   const fateAddons = astrolabe.addons.filter((a) => a.isFate)
   const destinyAddons = astrolabe.addons.filter((a) => !a.isFate)
+
+  // Сводный показатель в центре пентаграммы — суммарная аптитуда / 100, как в игре.
+  const totalAptitude = astrolabe.aptitudes.reduce((s, v) => s + v, 0)
+  const centerValue = (totalAptitude / 100).toFixed(2)
+
   return (
     <div className={styles.dAstro}>
-      <div className={styles.dAstroFateRow}>
-        {Array.from({ length: 5 }).map((_, i) => {
-          const a = fateAddons[i]
-          return (
-            <div key={i} className={styles.dAstroFate} title={a?.addonName}>
-              <span className={styles.dAstroFateStar}>★</span>
-              {a && <span className={styles.dAstroFateValue}>{a.value}</span>}
+      <div className={styles.dAstroBlock}>
+        <AstrolabePentagon
+          fateBySlot={Object.fromEntries(fateAddons.map((a) => [a.virtualSlot, a]))}
+          destinyBySlot={Object.fromEntries(destinyAddons.map((a) => [a.virtualSlot, a]))}
+          centerValue={centerValue}
+        />
+        <div className={styles.dAstroAddonList}>
+          {destinyAddons.map((a) => (
+            <div key={a.virtualSlot} className={styles.dAstroRow}>
+              <span className={styles.dAstroLabelDestiny}>Судьба</span>
+              <span className={styles.dAstroDash}>-</span>
+              <span className={styles.dAstroAddonName}>
+                {decodeUnicodeEscapes(a.addonName) ?? `addon #${a.addonId}`}
+              </span>
+              <span className={styles.dAstroValue}>{a.displayValue ?? `+${a.value}`}</span>
             </div>
-          )
-        })}
+          ))}
+          {fateAddons.map((a) => (
+            <div key={a.virtualSlot} className={styles.dAstroRow}>
+              <span className={styles.dAstroLabelFate}>Фатум</span>
+              <span className={styles.dAstroDash}>-</span>
+              <span className={styles.dAstroAddonName}>
+                {decodeUnicodeEscapes(a.addonName) ?? `addon #${a.addonId}`}
+              </span>
+              <span className={styles.dAstroValue}>{a.displayValue ?? `+${a.value}`}</span>
+            </div>
+          ))}
+        </div>
       </div>
       <div className={styles.dAstroLevel}>
         Lv {astrolabe.level} · Аптитуды: {astrolabe.aptitudes.join(' / ')}
       </div>
-      {destinyAddons.length > 0 && (
-        <div className={styles.dAstroDestiny}>
-          {destinyAddons.map((a) => (
-            <div key={a.virtualSlot} className={styles.dAstroDestinyRow}>
-              <span className={styles.dAstroSlotLabel}>Судьба</span>
-              <span className={styles.dAstroAddonName}>
-                {decodeUnicodeEscapes(a.addonName) ?? `addon #${a.addonId}`} +{a.value}
-              </span>
-              <span className={styles.dAstroAptitude}>(апт. {a.slotAptitude})</span>
-            </div>
-          ))}
-        </div>
-      )}
-      {fateAddons.length > 0 && (
-        <div className={styles.dAstroDestiny}>
-          {fateAddons.map((a) => (
-            <div key={a.virtualSlot} className={styles.dAstroDestinyRow}>
-              <span className={styles.dAstroSlotLabelFate}>Фатум</span>
-              <span className={styles.dAstroAddonName}>
-                {decodeUnicodeEscapes(a.addonName) ?? `addon #${a.addonId}`} +{a.value}
-              </span>
-              <span className={styles.dAstroAptitude}>(апт. {a.slotAptitude})</span>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
+  )
+}
+
+/**
+ * SVG-пентаграмма астролябии: 5 внешних звёзд Фатум (slots 0/2/4/6/8) по
+ * вершинам пятиугольника и 5 внутренних звёзд Судьба (slots 1/3/5/7/9)
+ * на серединах рёбер. В центре — сводный показатель.
+ */
+function AstrolabePentagon({
+  fateBySlot,
+  destinyBySlot,
+  centerValue,
+}: {
+  fateBySlot: Record<number, EquipItem['astrolabe'] extends infer T
+    ? T extends { addons: (infer A)[] } ? A : never
+    : never>
+  destinyBySlot: Record<number, EquipItem['astrolabe'] extends infer T
+    ? T extends { addons: (infer A)[] } ? A : never
+    : never>
+  centerValue: string
+}) {
+  const cx = 95
+  const cy = 95
+  const Router = 75
+  const Rinner = 32
+
+  const fateSlots = [0, 2, 4, 6, 8]
+  const destinySlots = [1, 3, 5, 7, 9]
+
+  // Внешние вершины — Фатум (5 точек, начиная с верха, по часовой стрелке).
+  const fatePoints = fateSlots.map((slot, i) => {
+    const angle = (-90 + i * 72) * (Math.PI / 180)
+    return {
+      slot,
+      x: cx + Router * Math.cos(angle),
+      y: cy + Router * Math.sin(angle),
+    }
+  })
+  // Внутренние точки — Судьба (5 точек, со сдвигом 36° от внешних).
+  const destinyPoints = destinySlots.map((slot, i) => {
+    const angle = (-90 + 36 + i * 72) * (Math.PI / 180)
+    return {
+      slot,
+      x: cx + Rinner * Math.cos(angle),
+      y: cy + Rinner * Math.sin(angle),
+    }
+  })
+
+  // Линии «звезды» — каждая внешняя точка соединена с двумя несмежными
+  // (даёт классическую пентаграмму).
+  const starLines = fatePoints.map((p, i) => {
+    const next = fatePoints[(i + 2) % fatePoints.length]
+    return `${p.x},${p.y} ${next.x},${next.y}`
+  })
+
+  return (
+    <svg viewBox="0 0 190 190" className={styles.dAstroSvg} aria-hidden="true">
+      <defs>
+        <radialGradient id="astroBg" cx="50%" cy="50%">
+          <stop offset="0%" stopColor="rgba(91,127,245,0.18)" />
+          <stop offset="70%" stopColor="rgba(91,127,245,0.06)" />
+          <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+        </radialGradient>
+      </defs>
+      <circle cx={cx} cy={cy} r={Router + 8} fill="url(#astroBg)" />
+      {/* Пентаграмма (звезда из 5 линий). */}
+      {starLines.map((points, i) => (
+        <polyline
+          key={i}
+          points={points}
+          fill="none"
+          stroke="rgba(125,206,255,0.55)"
+          strokeWidth="1.2"
+        />
+      ))}
+      {/* Центр — сводный показатель. */}
+      <text
+        x={cx}
+        y={cy + 5}
+        textAnchor="middle"
+        fontSize="15"
+        fill="#fff"
+        fontWeight="600"
+      >
+        {centerValue}
+      </text>
+      {/* Звёзды Фатум (внешние вершины). */}
+      {fatePoints.map((p) => {
+        const a = fateBySlot[p.slot]
+        return (
+          <g key={`f-${p.slot}`}>
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={11}
+              fill="#1b1c25"
+              stroke={a ? '#ff5f55' : 'rgba(255,95,85,0.35)'}
+              strokeWidth="1.5"
+            />
+            <text
+              x={p.x}
+              y={p.y + 3}
+              textAnchor="middle"
+              fontSize="10"
+              fontWeight="700"
+              fill={a ? '#ff5f55' : 'rgba(255,95,85,0.45)'}
+            >
+              {p.slot}
+            </text>
+          </g>
+        )
+      })}
+      {/* Звёзды Судьба (внутренние точки). */}
+      {destinyPoints.map((p) => {
+        const a = destinyBySlot[p.slot]
+        return (
+          <g key={`d-${p.slot}`}>
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={9}
+              fill="#1b1c25"
+              stroke={a ? '#7DCEFF' : 'rgba(125,206,255,0.35)'}
+              strokeWidth="1.5"
+            />
+            <text
+              x={p.x}
+              y={p.y + 3}
+              textAnchor="middle"
+              fontSize="9"
+              fontWeight="700"
+              fill={a ? '#7DCEFF' : 'rgba(125,206,255,0.45)'}
+            >
+              {p.slot}
+            </text>
+          </g>
+        )
+      })}
+    </svg>
   )
 }
 

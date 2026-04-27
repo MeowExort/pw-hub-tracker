@@ -282,7 +282,11 @@ $slot-divider: 18px;
   border-radius: var(--radius-md);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
   padding: var(--space-md);
-  width: 360px;
+  // Базовая ширина 360px, но при длинном имени с ★/+заточкой даём контейнеру
+  // расти до 520px вместо переноса заголовка на две строки.
+  min-width: 360px;
+  width: max-content;
+  max-width: 520px;
   max-height: calc(100vh - 32px);
   overflow-y: auto;
   pointer-events: none;
@@ -326,16 +330,17 @@ $gameAccentEnhanced: #1cd45f;
   display: flex;
   align-items: baseline;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  white-space: nowrap;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 4px;
 }
 
-.dStars { color: $gameAccentGold; font-size: 14px; letter-spacing: 1px; }
-.dName  { color: $gameAccentGold; font-weight: 700; font-size: 15px; }
-.dCells { color: var(--text-secondary); font-size: 12px; }
-.dRefine { color: $gameAccentGold; font-weight: 700; }
+.dStars { color: $gameAccentGold; font-size: 14px; letter-spacing: 1px; flex-shrink: 0; }
+.dName  { color: $gameAccentGold; font-weight: 700; font-size: 15px; white-space: nowrap; }
+.dCells { color: var(--text-secondary); font-size: 12px; flex-shrink: 0; }
+.dRefine { color: $gameAccentGold; font-weight: 700; flex-shrink: 0; }
 
 .dBound { color: var(--text-secondary); font-size: 12px; margin-bottom: 2px; }
 
@@ -459,61 +464,48 @@ $gameAccentEnhanced: #1cd45f;
   margin-top: 6px;
 }
 
-.dAstroFateRow {
-  display: flex;
-  justify-content: space-between;
-  gap: 4px;
-  padding: 4px 8px;
-  background: rgba(91, 127, 245, 0.08);
-  border: 1px solid rgba(91, 127, 245, 0.2);
+// Двухколоночная раскладка: слева пентаграмма, справа список аддонов.
+.dAstroBlock {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 4px;
+  background: rgba(91, 127, 245, 0.05);
+  border: 1px solid rgba(91, 127, 245, 0.18);
   border-radius: var(--radius-sm);
 }
 
-.dAstroFate {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-  font-size: 11px;
-  color: var(--text-secondary);
+.dAstroSvg {
+  width: 200px;
+  height: 200px;
+  filter: drop-shadow(0 0 6px rgba(91, 127, 245, 0.35));
 }
 
-.dAstroFateStar {
-  font-size: 18px;
-  color: $gameAccentGold;
-  line-height: 1;
-}
-
-.dAstroFateValue {
-  color: #fff;
-  font-weight: 600;
+.dAstroAddonList {
+  display: grid;
+  // Колонки: метка | тире | имя аддона (растягивается) | значение (вправо).
+  grid-template-columns: auto auto 1fr auto;
+  align-items: baseline;
+  column-gap: 6px;
+  row-gap: 2px;
   font-size: 12px;
-  margin-top: 2px;
 }
+
+.dAstroRow {
+  display: contents;
+}
+
+.dAstroLabelDestiny { color: $gameAccentBlueLight; font-weight: 500; }
+.dAstroLabelFate { color: $gameAccentRed; font-weight: 500; }
+.dAstroDash { color: var(--text-muted); }
+.dAstroAddonName { color: $gameAccentBlueDark; white-space: nowrap; }
+.dAstroValue { color: #fff; text-align: right; font-variant-numeric: tabular-nums; }
 
 .dAstroLevel {
   color: var(--text-secondary);
   font-size: 12px;
 }
-
-.dAstroDestiny {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.dAstroDestinyRow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12.5px;
-}
-
-.dAstroSlotLabel { color: #6dc3ff; min-width: 60px; }
-.dAstroSlotLabelFate { color: $gameAccentRed; min-width: 60px; }
-
-.dAstroAddonName { color: $gameAccentBlueDark; flex: 1; }
-.dAstroAptitude { color: var(--text-muted); font-size: 11px; }
 
 .dCard {
   display: flex;
