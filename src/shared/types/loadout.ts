@@ -76,6 +76,12 @@ export interface ItemProperty {
   params: number[]
   computedValue?: number
   displayValue?: string
+  /** Только для type 55 (Доп. навык): Param0 = skillId, Param1 = уровень. */
+  skillId?: number
+  skillName?: string
+  skillNameColored?: string
+  skillDescription?: string
+  skillLevel?: number
 }
 
 export interface ItemSoul {

@@ -400,6 +400,51 @@ $gameAccentEnhanced: #1cd45f;
   color: $gameAccentBlueDark;
 }
 
+// Аддон «Доп. навык» (type 55): красивая карточка с именем (наследует цвета
+// PW-кодов из NameColored) и описанием под ним.
+.dSkillAddon {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0;
+  & + & {
+    border-top: 1px dashed rgba(255, 255, 255, 0.06);
+  }
+}
+
+.dSkillAddonHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dSkillAddonName {
+  // Имя скила: ItemDescription заполнит цвета из ^rrggbb. Если кодов нет —
+  // используем дефолтный золотой цвет, как у других «именных» полей.
+  color: $gameAccentGold;
+  font-weight: 600;
+  font-size: 13px;
+  display: inline;
+}
+
+.dSkillAddonLevel {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.dSkillAddonDesc {
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  line-height: 1.35;
+  margin-left: 4px;
+  // Описание скила пишет по нескольку строк через \r — пусть переносится
+  // нормально, не выталкивая колонку.
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
 .dSoul {
   margin-top: 6px;
   display: flex;

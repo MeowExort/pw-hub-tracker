@@ -359,12 +359,41 @@ function PropertiesBlock({
   if (lines.length === 0) return null
   return (
     <div className={styles.dAddons}>
-      {lines.map((p, i) => (
-        <div key={i} className={styles.dAddonBasic}>
-          {decodeUnicodeEscapes(p.addonName) ?? `addon #${p.addonId}`}{' '}
-          {p.displayValue ?? (p.computedValue !== undefined ? `+${p.computedValue}` : '')}
-        </div>
-      ))}
+      {lines.map((p, i) =>
+        p.skillId
+          ? <SkillAddonRow key={i} property={p} />
+          : (
+              <div key={i} className={styles.dAddonBasic}>
+                {decodeUnicodeEscapes(p.addonName) ?? `addon #${p.addonId}`}{' '}
+                {p.displayValue ?? (p.computedValue !== undefined ? `+${p.computedValue}` : '')}
+              </div>
+            ),
+      )}
+    </div>
+  )
+}
+
+/**
+ * Рендер аддона «Доп. навык» (type 55): вместо «Доп. навык +<skillId>»
+ * показываем имя скилла (с PW-цветовыми кодами через ItemDescription) и
+ * его описание. Уровень выводим рядом с именем как в игровом UI.
+ */
+function SkillAddonRow({ property }: { property: import('@/shared/types/loadout').ItemProperty }) {
+  const level = property.skillLevel ?? 0
+  const rawName = property.skillNameColored || property.skillName || `Навык #${property.skillId}`
+  const decodedName = decodeUnicodeEscapes(rawName) ?? rawName
+  const decodedDesc = decodeUnicodeEscapes(property.skillDescription ?? undefined)
+  return (
+    <div className={styles.dSkillAddon}>
+      <div className={styles.dSkillAddonHeader}>
+        {/* ItemDescription парсит ^rrggbb-цвета из NameColored. Если у скилла
+            раскраски нет — компонент просто покажет имя без оформления. */}
+        <ItemDescription text={decodedName} className={styles.dSkillAddonName} />
+        {level > 0 && <span className={styles.dSkillAddonLevel}>ур. {level}</span>}
+      </div>
+      {decodedDesc && (
+        <ItemDescription text={decodedDesc} className={styles.dSkillAddonDesc} />
+      )}
     </div>
   )
 }
@@ -807,20 +836,28 @@ function cardTypeLabel(subType: number): string {
 // ── helpers ─────────────────────────────────────────────────────────
 
 function refineLevel(item: EquipItem): number | null {
-  if (!item.body?.properties?.length) return null
-  for (const p of item.body.properties) {
-    if (
-      p.params.length >= 2 &&
-      p.params[1] >= 0 &&
-      p.params[1] <= 12 &&
-      !p.isEmbed &&
-      !p.isEngraved
-    ) {
-      return p.params[1]
+    if (!item.body?.properties?.length) return null
+    let refineAddonId = essenceLevelupAddonId(item.essence);
+    if (refineAddonId === null) {
+      for (const p of item.body.properties) {
+        if (
+            p.params.length >= 2 &&
+            p.params[1] >= 1 &&
+            p.params[1] <= 12 &&
+            !p.isEmbed &&
+            !p.isEngraved
+        ) {
+          return p.params[1]
+        }
+      }
     }
+    for (const p of item.body.properties) {
+      if (p.addonId === refineAddonId) {
+        return p.params[1];
+      }
+    }
+    return null
   }
-  return null
-}
 
 /** Бонус заточки — params[0] для аддона, addonId которого совпадает с levelupAddonId эссенции. */
 function enhancedValue(item: EquipItem, refineAddonId: number | null): number | null {
@@ -876,6 +913,7 @@ function embedAt(item: EquipItem, index: number) {
 }
 
 function phaseName(phase: number): string {
+  return '';
   const names: Record<number, string> = { 1: 'солнца', 2: 'звезды', 3: 'луны', 4: 'кометы', 5: 'затмения' }
   return names[phase] ?? String(phase)
 }
