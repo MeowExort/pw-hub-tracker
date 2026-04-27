@@ -156,6 +156,13 @@ const RAW_ACTIONS = [
   ['getServersAverageScore', 'GET', '/api/analytics/servers/average-score'],
   ['getServersPlayerStats', 'GET', '/api/analytics/servers/player-stats-comparison'],
   ['getServerSummary', 'GET', '/api/analytics/servers/:server/summary'],
+  // loadout (экипировка/руны/реликвии)
+  ['getPlayerLoadoutLatest', 'GET', '/api/players/:server/:playerId/loadout/latest'],
+  ['getPlayerLoadoutAt', 'GET', '/api/players/:server/:playerId/loadout/at'],
+  ['getPlayerLoadoutHistory', 'GET', '/api/players/:server/:playerId/loadout/history'],
+  ['getEquipmentSnapshot', 'GET', '/api/players/:server/:playerId/equipment/snapshots/:snapshotId'],
+  ['getSkillRunesSnapshot', 'GET', '/api/players/:server/:playerId/skill-runes/snapshots/:snapshotId'],
+  ['getSoulRelicsSnapshot', 'GET', '/api/players/:server/:playerId/soul-relics/snapshots/:snapshotId'],
 ]
 
 const ACTION_ROUTE_MAP = {}

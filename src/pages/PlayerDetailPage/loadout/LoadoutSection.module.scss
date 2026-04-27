@@ -1,0 +1,908 @@
+/* Главный контейнер секции loadout-а на странице игрока. */
+
+.section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.timeline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+
+  label {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+  }
+}
+
+.timelineSelect {
+  padding: 6px 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  min-width: 220px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+  margin-top: 4px;
+}
+
+.tab {
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  margin-bottom: -1px;
+
+  &:hover {
+    color: var(--text);
+  }
+
+  &.tabActive {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
+
+  &.tabDisabled {
+    color: var(--text-muted);
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+}
+
+.empty {
+  color: var(--text-secondary);
+  text-align: center;
+  padding: var(--space-xl) 0;
+  font-size: var(--font-size-sm);
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-xl) 0;
+}
+
+/* ── Equipment paper-doll (игровая раскладка) ───────────────────────── */
+
+$slot-size: 60px;
+
+// Зазор между левым и правым блоками: вместо обычной 6px-щели между col3 и col4
+// показываем заметный «коридор» с тонкой светящейся линией посередине.
+$slot-divider: 18px;
+
+.dollGrid {
+  display: grid;
+  grid-template-columns:
+    repeat(3, $slot-size)
+    $slot-divider
+    repeat(3, $slot-size);
+  grid-template-rows: repeat(4, $slot-size);
+  gap: 6px;
+  width: fit-content;
+  padding: var(--space-sm);
+  background: linear-gradient(135deg, #1a1c24 0%, #15171f 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  position: relative;
+
+  // Декоративная вертикальная линия в середине разделительной колонки.
+  &::before {
+    content: '';
+    position: absolute;
+    top: var(--space-sm);
+    bottom: var(--space-sm);
+    // 3 ячейки + 3 промежутка слева + центр разделителя
+    left: calc(var(--space-sm) + (#{$slot-size} * 3) + (6px * 3) + (#{$slot-divider} / 2) - 1px);
+    width: 2px;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(91, 127, 245, 0.18) 12%,
+      rgba(91, 127, 245, 0.32) 50%,
+      rgba(91, 127, 245, 0.18) 88%,
+      transparent 100%
+    );
+    border-radius: 2px;
+    pointer-events: none;
+  }
+}
+
+.slotReserved {
+  background: transparent !important;
+  border-color: transparent !important;
+  cursor: default;
+  pointer-events: none;
+}
+
+// Золотая рамка для стилевых слотов с аддонами (выделяет «прокачанный» костюм).
+.slotGold {
+  border-color: #ffcb4a !important;
+  box-shadow: 0 0 0 1px rgba(255, 203, 74, 0.55), 0 0 8px rgba(255, 203, 74, 0.45);
+
+  &:hover {
+    border-color: #ffe07a !important;
+    box-shadow: 0 0 0 1px rgba(255, 224, 122, 0.7), 0 0 12px rgba(255, 203, 74, 0.6);
+  }
+}
+
+.slotCell {
+  position: relative;
+  width: $slot-size;
+  height: $slot-size;
+  background: linear-gradient(135deg, #2a2c36 0%, #1e2028 100%);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  font-family: inherit;
+
+  &:hover:not(.slotEmpty) {
+    border-color: var(--primary);
+    transform: scale(1.05);
+    z-index: 2;
+  }
+
+  &.slotActive {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary), 0 0 12px rgba(91, 127, 245, 0.4);
+  }
+
+  &.slotEmpty {
+    cursor: default;
+    background: linear-gradient(135deg, #1a1c24 0%, #15171f 100%);
+    border-color: var(--border);
+    border-style: dashed;
+    opacity: 0.5;
+  }
+}
+
+.slotIcon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.slotBadge {
+  position: absolute;
+  bottom: 1px;
+  right: 2px;
+  font-size: 9px;
+  color: #fff;
+  text-shadow: 0 0 3px #000, 0 0 3px #000, 0 1px 2px #000;
+  font-weight: 700;
+  pointer-events: none;
+  letter-spacing: 0;
+}
+
+.slotRefine {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 11px;
+  color: #ffcb4a;
+  font-weight: 700;
+  pointer-events: none;
+  // Жёсткий чёрный контур + плотные тени, чтобы золотое «+12» читалось
+  // и поверх светлых иконок, и поверх золотых деталей. Сначала рисуем
+  // обводку (paint-order: stroke fill — обводка уходит под заливку).
+  -webkit-text-stroke: 0.6px #000;
+  paint-order: stroke fill;
+  text-shadow:
+    -1px -1px 0 #000,
+     1px -1px 0 #000,
+    -1px  1px 0 #000,
+     1px  1px 0 #000,
+     0    0   3px rgba(0, 0, 0, 0.95),
+     0    1px 3px rgba(0, 0, 0, 0.85);
+}
+
+.slotEmptyLabel {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-align: center;
+  user-select: none;
+  padding: 2px;
+  line-height: 1.1;
+}
+
+.dollSection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: var(--space-md);
+}
+
+.dollSectionTitle {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+  font-weight: 600;
+}
+
+.specialRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: var(--space-sm);
+  background: linear-gradient(135deg, #1a1c24 0%, #15171f 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  width: fit-content;
+}
+
+.equipmentLayout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  align-items: flex-start;
+}
+
+/* ── Tooltip с деталями экипировки ─────────────────────────────────── */
+
+.tooltipWrapper {
+  display: inline-flex;
+  position: relative;
+  // Wrapper сам становится прямым потомком .dollGrid и принимает grid-row/grid-column,
+  // поэтому пусть займёт всю ячейку — иначе hover/focus ловится только по 60×60-области.
+  width: $slot-size;
+  height: $slot-size;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 10000;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  padding: var(--space-md);
+  // Базовая ширина 360px, но при длинном имени с ★/+заточкой даём контейнеру
+  // расти до 520px вместо переноса заголовка на две строки.
+  min-width: 360px;
+  width: max-content;
+  max-width: 520px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  // Горизонтальный скролл резать жёстко — если внутренний блок (например,
+  // таблица астролябии) почему-то выталкивается за рамки, вертикальная
+  // полоса прокрутки не должна выезжать снизу.
+  overflow-x: hidden;
+  pointer-events: none;
+  animation: tooltipFadeIn 0.15s ease-out;
+}
+
+.detailsEmbedded {
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes tooltipFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Item details — игровой формат тултипа ────────────────────────── */
+
+$gameDetailsBg: #1b1c25;
+// Тёмно-синий — для базовых характеристик (физ. атака, защита и т.п.) — как в игре.
+$gameAccentBlueDark: #4d8fff;
+// Светло-голубой — для камней, вставленных в ячейки.
+$gameAccentBlueLight: #9be0ff;
+$gameAccentRed: #ff5f55;
+$gameAccentPurple: #b06bff;
+$gameAccentGold: #ffcb4a;
+$gameAccentGreen: #6cfb4b;
+$gameAccentEnhanced: #1cd45f;
+
+.detailsEmbedded {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #fff;
+  font-family: var(--font-family);
+}
+
+.dHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.dStars { color: $gameAccentGold; font-size: 14px; letter-spacing: 1px; flex-shrink: 0; }
+.dName  { color: $gameAccentGold; font-weight: 700; font-size: 15px; white-space: nowrap; }
+.dCells { color: var(--text-secondary); font-size: 12px; flex-shrink: 0; }
+.dRefine { color: $gameAccentGold; font-weight: 700; flex-shrink: 0; }
+
+.dBound { color: var(--text-secondary); font-size: 12px; margin-bottom: 2px; }
+
+.dRow { color: #fff; }
+.dValueBase { color: #fff; }
+.dValueBaseInline { color: #fff; }
+.dValueEnhanced { color: $gameAccentEnhanced; font-weight: 600; }
+
+.dEngraved {
+  color: $gameAccentGold;
+  font-weight: 600;
+  margin: 2px 0;
+}
+
+.dReqs {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-top: 4px;
+  > div { line-height: 1.3; }
+}
+
+.dAddons {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 2px;
+}
+
+// Характеристики — тёмно-синие, как в игре.
+.dAddonBasic {
+  color: $gameAccentBlueDark;
+}
+
+// Аддон «Доп. навык» (type 55): красивая карточка с именем (наследует цвета
+// PW-кодов из NameColored) и описанием под ним.
+.dSkillAddon {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0;
+  & + & {
+    border-top: 1px dashed rgba(255, 255, 255, 0.06);
+  }
+}
+
+.dSkillAddonHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dSkillAddonName {
+  // Имя скила: ItemDescription заполнит цвета из ^rrggbb. Если кодов нет —
+  // используем дефолтный золотой цвет, как у других «именных» полей.
+  color: $gameAccentGold;
+  font-weight: 600;
+  font-size: 13px;
+  display: inline;
+}
+
+.dSkillAddonLevel {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.dSkillAddonDesc {
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  line-height: 1.35;
+  margin-left: 4px;
+  // Описание скила пишет по нескольку строк через \r — пусть переносится
+  // нормально, не выталкивая колонку.
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.dSoul {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dSoulTitle {
+  color: $gameAccentRed;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.dCrystal {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dCrystalTitle {
+  color: $gameAccentPurple;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.dCrystalAddon {
+  color: $gameAccentRed;
+}
+
+.dCrystalDots {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.crystalDot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 6px currentColor;
+}
+
+.dStones {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+// Камни — светло-голубые, как в игре.
+.dStone { color: $gameAccentBlueLight; }
+.dStoneAddon { color: $gameAccentBlueLight; opacity: 0.85; }
+
+.dEngravings {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  color: $gameAccentGold;
+}
+
+.dMaker {
+  margin-top: 6px;
+  color: $gameAccentGreen;
+  font-weight: 500;
+}
+
+// Описание из items.Description: парсится через ItemDescription и сохраняет
+// игровые ^rrggbb-цвета. Отделяем от верхней части тонким разделителем.
+.dDescription {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+/* ── Astrolabe ─────────────────────────────────────────────────────── */
+
+.dAstro {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+// Двухколоночная раскладка: слева пентаграмма, справа список аддонов.
+// minmax(0, 1fr) для правой колонки нужен, чтобы grid-ребёнок мог сжаться
+// уже своего min-content и не вытолкнуть таблицу за рамки тултипа.
+.dAstroBlock {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 6px 4px;
+  background: rgba(91, 127, 245, 0.05);
+  border: 1px solid rgba(91, 127, 245, 0.18);
+  border-radius: var(--radius-sm);
+}
+
+.dAstroSvg {
+  width: 180px;
+  height: 180px;
+  filter: drop-shadow(0 0 6px rgba(91, 127, 245, 0.35));
+}
+
+.dAstroAddonList {
+  display: grid;
+  // Колонки: метка | аптитуда (ключ соответствия со звездой) | имя (растягивается,
+  // но может сжаться) | значение (вправо). minmax(0, 1fr) разрешает третьей
+  // колонке сжаться до содержимого даже при длинных именах аддонов.
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: 6px;
+  row-gap: 2px;
+  font-size: 12px;
+  // Без min-width: 0 grid-item с display:grid считается с min-content,
+  // и длинные имена выталкивают таблицу за правый край тултипа.
+  min-width: 0;
+}
+
+.dAstroRow {
+  display: contents;
+}
+
+.dAstroLabelDestiny { color: $gameAccentBlueLight; font-weight: 500; }
+.dAstroLabelFate { color: $gameAccentRed; font-weight: 500; }
+// Аптитуда в скобках: тот же текст печатается в соответствующей звезде пентаграммы.
+.dAstroAptitudeKey {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+}
+// Длинные имена аддонов оборачиваются по словам, чтобы не выталкивать колонку
+// значений за правый край тултипа.
+.dAstroAddonName {
+  color: $gameAccentBlueDark;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.dAstroValue {
+  color: #fff;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dAstroLevel {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.dCard {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 4px;
+}
+
+.dCardHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.dCardRank {
+  color: $gameAccentGold;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+.dCardType {
+  color: $gameAccentPurple;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.dCardStats {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 4px;
+}
+
+.dCardAddons {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 4px;
+}
+
+.dCardSwallow {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+/* ── Item details panel (старый, оставлен для не-tooltip случаев) ── */
+
+.detailsPanel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  position: sticky;
+  top: var(--space-md);
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
+.detailsHeader {
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-start;
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--border);
+}
+
+.detailsIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.detailsTitle {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.detailsName {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.detailsMeta {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.detailsBlock {
+  margin-top: var(--space-md);
+
+  h4 {
+    margin: 0 0 var(--space-sm) 0;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+  }
+}
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+  padding: 2px 0;
+  gap: var(--space-md);
+}
+
+.statLabel {
+  color: var(--text-secondary);
+}
+
+.statValue {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.statRange {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.propertyRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: var(--font-size-sm);
+  border-bottom: 1px dashed var(--border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.propertyName {
+  color: var(--text);
+}
+
+.propertyValue {
+  color: var(--success);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+
+  &.negative {
+    color: var(--danger);
+  }
+}
+
+.propertyFlags {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 6px;
+  font-size: 10px;
+  color: var(--warning);
+  align-self: center;
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  height: 100%;
+  min-height: 200px;
+  padding: var(--space-md);
+}
+
+/* ── Skill runes grid ──────────────────────────────────────────────── */
+
+.runesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-sm);
+}
+
+.runeCard {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.runeSlotNum {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.runeSkill {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.runeItem {
+  font-size: var(--font-size-xs);
+  color: var(--primary);
+}
+
+/* ── Soul relics list ──────────────────────────────────────────────── */
+
+.relicsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.relicCard {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+.relicHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.relicName {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.relicBadges {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.relicSoulBadge {
+  font-size: var(--font-size-xs);
+  background: var(--primary);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.relicRefine {
+  font-size: var(--font-size-xs);
+  color: var(--warning);
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.relicMain {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.relicExtras {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-xs) var(--space-md);
+  margin-top: var(--space-sm);
+  font-size: var(--font-size-sm);
+}
+
+.relicExtra {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  color: var(--text);
+
+  span:last-child {
+    color: var(--success);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ── Crystal viz ───────────────────────────────────────────────────── */
+
+.crystalDot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  vertical-align: middle;
+}
