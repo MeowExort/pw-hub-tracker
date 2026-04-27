@@ -42,6 +42,7 @@ const SLOT_LABELS: Record<number, string> = {
   14: 'Стиль тела',
   15: 'Стиль ног',
   16: 'Стиль накидки',
+  17: 'Стиль оружия',
   18: 'Трактат',
   19: 'Кулон',
   20: 'Амулет',
@@ -114,7 +115,7 @@ export const MAIN_LAYOUT: MainSlotConfig[] = [
 export const POKER_SLOTS: number[] = [32, 33, 34, 35, 36, 37]
 
 /** Слоты стилей / костюмов (нижний ряд №2). */
-export const STYLE_SLOTS: number[] = [29, 13, 14, 15, 16, 25]
+export const STYLE_SLOTS: number[] = [29, 13, 14, 15, 16, 17, 25]
 
 /** URL CDN-иконки предмета (конвенция Pw.Hub). */
 export function itemIconUrl(itemId?: number): string | undefined {

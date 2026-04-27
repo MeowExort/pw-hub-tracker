@@ -32,7 +32,12 @@ export function EquipmentTab({ equipment }: Props) {
         itemsByIndex={itemsByIndex}
       />
 
-      <SpecialRow title="Стиль" slots={STYLE_SLOTS} itemsByIndex={itemsByIndex} />
+      <SpecialRow
+        title="Стиль"
+        slots={STYLE_SLOTS}
+        itemsByIndex={itemsByIndex}
+        highlightWithAddons
+      />
     </div>
   )
 }
@@ -73,15 +78,25 @@ interface SpecialRowProps {
   title: string
   slots: number[]
   itemsByIndex: Map<number, EquipItem>
+  /**
+   * Для стилевых слотов: если у предмета в этом слоте есть аддоны
+   * (свойства, не камни-embed), подсвечиваем ячейку золотой рамкой.
+   */
+  highlightWithAddons?: boolean
 }
 
-function SpecialRow({ title, slots, itemsByIndex }: SpecialRowProps) {
+function SpecialRow({ title, slots, itemsByIndex, highlightWithAddons }: SpecialRowProps) {
   return (
     <div className={styles.dollSection}>
       <h3 className={styles.dollSectionTitle}>{title}</h3>
       <div className={styles.specialRow}>
         {slots.map((idx) => (
-          <SlotCell key={idx} label={slotLabel(idx)} item={itemsByIndex.get(idx)} />
+          <SlotCell
+            key={idx}
+            label={slotLabel(idx)}
+            item={itemsByIndex.get(idx)}
+            highlightWithAddons={highlightWithAddons}
+          />
         ))}
       </div>
     </div>
@@ -93,9 +108,10 @@ interface SlotCellProps {
   item?: EquipItem
   row?: number
   col?: number
+  highlightWithAddons?: boolean
 }
 
-function SlotCell({ label, item, row, col }: SlotCellProps) {
+function SlotCell({ label, item, row, col, highlightWithAddons }: SlotCellProps) {
   const style: React.CSSProperties = {}
   if (row && col) {
     style.gridRow = row
@@ -114,11 +130,17 @@ function SlotCell({ label, item, row, col }: SlotCellProps) {
     )
   }
 
+  // Для стилевых слотов: золотая рамка при наличии «настоящих» аддонов
+  // (не embed-камней, не engraved-гравировок).
+  const hasMeaningfulAddons =
+    !!highlightWithAddons &&
+    !!item.body?.properties?.some((p) => !p.isEmbed && !p.isEngraved)
+
   // Стиль с gridRow/gridColumn вешаем на сам tooltipWrapper, потому что именно он
   // является прямым потомком .dollGrid и попадает под действие grid-раскладки.
   return (
     <EquipmentItemTooltip item={item} style={style}>
-      <SlotInner item={item} label={label} />
+      <SlotInner item={item} label={label} highlight={hasMeaningfulAddons} />
     </EquipmentItemTooltip>
   )
 }
@@ -126,9 +148,11 @@ function SlotCell({ label, item, row, col }: SlotCellProps) {
 function SlotInner({
   item,
   label,
+  highlight,
 }: {
   item: EquipItem
   label: string
+  highlight?: boolean
 }) {
   const icon = itemIconUrl(item.itemId)
   const badge = badgeFor(item)
@@ -137,9 +161,12 @@ function SlotInner({
   // Браузерный title не ставим — используется только кастомный <EquipmentItemTooltip />.
   // На <img> также убираем родной title во избежание двойного тултипа.
   // Grid-раскладка применяется к внешнему tooltipWrapper, см. SlotCell.
+  const className = highlight
+    ? `${styles.slotCell} ${styles.slotGold}`
+    : styles.slotCell
   return (
     <span
-      className={styles.slotCell}
+      className={className}
       role="button"
       tabIndex={0}
       aria-label={itemName}

@@ -434,7 +434,8 @@ function AstrolabeBlock({ astrolabe }: { astrolabe: NonNullable<EquipItem['astro
   const fateAddons = astrolabe.addons.filter((a) => a.isFate)
   const destinyAddons = astrolabe.addons.filter((a) => !a.isFate)
 
-  // Сводный показатель в центре пентаграммы — суммарная аптитуда / 100, как в игре.
+  // Сводный показатель в центре пентаграммы — сумма destiny-аптитуд / 100,
+  // как показывает игровой UI (например, 1998 → 19.98).
   const totalAptitude = astrolabe.aptitudes.reduce((s, v) => s + v, 0)
   const centerValue = (totalAptitude / 100).toFixed(2)
 
@@ -444,36 +445,54 @@ function AstrolabeBlock({ astrolabe }: { astrolabe: NonNullable<EquipItem['astro
         <AstrolabePentagon
           fateBySlot={Object.fromEntries(fateAddons.map((a) => [a.virtualSlot, a]))}
           destinyBySlot={Object.fromEntries(destinyAddons.map((a) => [a.virtualSlot, a]))}
+          aptitudes={astrolabe.aptitudes}
           centerValue={centerValue}
         />
         <div className={styles.dAstroAddonList}>
           {destinyAddons.map((a) => (
-            <div key={a.virtualSlot} className={styles.dAstroRow}>
-              <span className={styles.dAstroLabelDestiny}>Судьба</span>
-              <span className={styles.dAstroDash}>-</span>
-              <span className={styles.dAstroAddonName}>
-                {decodeUnicodeEscapes(a.addonName) ?? `addon #${a.addonId}`}
-              </span>
-              <span className={styles.dAstroValue}>{a.displayValue ?? `+${a.value}`}</span>
-            </div>
+            <AstroAddonRow key={a.virtualSlot} addon={a} kind="destiny" />
           ))}
           {fateAddons.map((a) => (
-            <div key={a.virtualSlot} className={styles.dAstroRow}>
-              <span className={styles.dAstroLabelFate}>Фатум</span>
-              <span className={styles.dAstroDash}>-</span>
-              <span className={styles.dAstroAddonName}>
-                {decodeUnicodeEscapes(a.addonName) ?? `addon #${a.addonId}`}
-              </span>
-              <span className={styles.dAstroValue}>{a.displayValue ?? `+${a.value}`}</span>
-            </div>
+            <AstroAddonRow key={a.virtualSlot} addon={a} kind="fate" />
           ))}
         </div>
       </div>
       <div className={styles.dAstroLevel}>
-        Lv {astrolabe.level} · Аптитуды: {astrolabe.aptitudes.join(' / ')}
+        Lv {astrolabe.level}
       </div>
     </div>
   )
+}
+
+type AstroAddon = NonNullable<EquipItem['astrolabe']>['addons'][number]
+
+/**
+ * Строка списка аддонов астролябии. Аптитуда слота показывается рядом с
+ * меткой и совпадает со значением, отрисованным в соответствующей звезде
+ * пентаграммы — это «ключ соответствия» для пользователя.
+ */
+function AstroAddonRow({ addon, kind }: { addon: AstroAddon; kind: 'destiny' | 'fate' }) {
+  const aptitude = (addon.slotAptitude / 100).toFixed(2)
+  const labelClass = kind === 'destiny' ? styles.dAstroLabelDestiny : styles.dAstroLabelFate
+  return (
+    <div className={styles.dAstroRow}>
+      <span className={labelClass}>{kind === 'destiny' ? 'Судьба' : 'Фатум'}</span>
+      <span className={styles.dAstroAptitudeKey}>({aptitude})</span>
+      <span className={styles.dAstroAddonName}>
+        {decodeUnicodeEscapes(addon.addonName) ?? `addon #${addon.addonId}`}
+      </span>
+      <span className={styles.dAstroValue}>{addon.displayValue ?? `+${addon.value}`}</span>
+    </div>
+  )
+}
+
+/** Аптитуды Фатум-слотов выводятся из adjacent destiny-аптитуд в массиве. */
+const FATE_ADJ_DESTINY: Record<number, [number, number]> = {
+  0: [4, 0], // между destiny slot 9 (idx 4) и slot 1 (idx 0)
+  2: [0, 1], // между slot 1 и slot 3
+  4: [1, 2], // между slot 3 и slot 5
+  6: [2, 3], // между slot 5 и slot 7
+  8: [3, 4], // между slot 7 и slot 9
 }
 
 /**
@@ -484,14 +503,12 @@ function AstrolabeBlock({ astrolabe }: { astrolabe: NonNullable<EquipItem['astro
 function AstrolabePentagon({
   fateBySlot,
   destinyBySlot,
+  aptitudes,
   centerValue,
 }: {
-  fateBySlot: Record<number, EquipItem['astrolabe'] extends infer T
-    ? T extends { addons: (infer A)[] } ? A : never
-    : never>
-  destinyBySlot: Record<number, EquipItem['astrolabe'] extends infer T
-    ? T extends { addons: (infer A)[] } ? A : never
-    : never>
+  fateBySlot: Record<number, AstroAddon>
+  destinyBySlot: Record<number, AstroAddon>
+  aptitudes: number[]
   centerValue: string
 }) {
   const cx = 95
@@ -502,6 +519,21 @@ function AstrolabePentagon({
   const fateSlots = [0, 2, 4, 6, 8]
   const destinySlots = [1, 3, 5, 7, 9]
 
+  // Аптитуда слота: для destiny — из массива aptitudes, для fate — сумма
+  // двух соседних destiny-аптитуд (так считает игровой UI).
+  const aptForDestiny = (slot: number) => {
+    const idx = (slot - 1) / 2
+    return aptitudes[idx]
+  }
+  const aptForFate = (slot: number) => {
+    const adj = FATE_ADJ_DESTINY[slot]
+    if (!adj) return undefined
+    const [a, b] = adj
+    return (aptitudes[a] ?? 0) + (aptitudes[b] ?? 0)
+  }
+  const formatApt = (apt?: number) =>
+    apt === undefined ? '' : (apt / 100).toFixed(2)
+
   // Внешние вершины — Фатум (5 точек, начиная с верха, по часовой стрелке).
   const fatePoints = fateSlots.map((slot, i) => {
     const angle = (-90 + i * 72) * (Math.PI / 180)
@@ -509,6 +541,7 @@ function AstrolabePentagon({
       slot,
       x: cx + Router * Math.cos(angle),
       y: cy + Router * Math.sin(angle),
+      aptitude: aptForFate(slot),
     }
   })
   // Внутренние точки — Судьба (5 точек, со сдвигом 36° от внешних).
@@ -518,6 +551,7 @@ function AstrolabePentagon({
       slot,
       x: cx + Rinner * Math.cos(angle),
       y: cy + Rinner * Math.sin(angle),
+      aptitude: aptForDestiny(slot),
     }
   })
 
@@ -548,7 +582,7 @@ function AstrolabePentagon({
           strokeWidth="1.2"
         />
       ))}
-      {/* Центр — сводный показатель. */}
+      {/* Центр — сводная аптитуда. */}
       <text
         x={cx}
         y={cy + 5}
@@ -559,28 +593,30 @@ function AstrolabePentagon({
       >
         {centerValue}
       </text>
-      {/* Звёзды Фатум (внешние вершины). */}
+      {/* Звёзды Фатум (внешние вершины) — внутри показываем аптитуду слота. */}
       {fatePoints.map((p) => {
         const a = fateBySlot[p.slot]
+        const aptText = formatApt(p.aptitude)
         return (
           <g key={`f-${p.slot}`}>
+            <title>{`Фатум · слот ${p.slot}${a ? ` · ${decodeUnicodeEscapes(a.addonName) ?? ''}` : ''}${aptText ? ` · апт. ${aptText}` : ''}`}</title>
             <circle
               cx={p.x}
               cy={p.y}
-              r={11}
+              r={13}
               fill="#1b1c25"
               stroke={a ? '#ff5f55' : 'rgba(255,95,85,0.35)'}
               strokeWidth="1.5"
             />
             <text
               x={p.x}
-              y={p.y + 3}
+              y={p.y + 3.5}
               textAnchor="middle"
-              fontSize="10"
+              fontSize="9"
               fontWeight="700"
-              fill={a ? '#ff5f55' : 'rgba(255,95,85,0.45)'}
+              fill={a ? '#ff5f55' : 'rgba(255,95,85,0.5)'}
             >
-              {p.slot}
+              {aptText || p.slot}
             </text>
           </g>
         )
@@ -588,12 +624,14 @@ function AstrolabePentagon({
       {/* Звёзды Судьба (внутренние точки). */}
       {destinyPoints.map((p) => {
         const a = destinyBySlot[p.slot]
+        const aptText = formatApt(p.aptitude)
         return (
           <g key={`d-${p.slot}`}>
+            <title>{`Судьба · слот ${p.slot}${a ? ` · ${decodeUnicodeEscapes(a.addonName) ?? ''}` : ''}${aptText ? ` · апт. ${aptText}` : ''}`}</title>
             <circle
               cx={p.x}
               cy={p.y}
-              r={9}
+              r={11}
               fill="#1b1c25"
               stroke={a ? '#7DCEFF' : 'rgba(125,206,255,0.35)'}
               strokeWidth="1.5"
@@ -602,11 +640,11 @@ function AstrolabePentagon({
               x={p.x}
               y={p.y + 3}
               textAnchor="middle"
-              fontSize="9"
+              fontSize="8.5"
               fontWeight="700"
-              fill={a ? '#7DCEFF' : 'rgba(125,206,255,0.45)'}
+              fill={a ? '#7DCEFF' : 'rgba(125,206,255,0.5)'}
             >
-              {p.slot}
+              {aptText || p.slot}
             </text>
           </g>
         )
