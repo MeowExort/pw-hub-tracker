@@ -222,13 +222,24 @@ $slot-divider: 18px;
 
 .slotRefine {
   position: absolute;
-  top: 1px;
-  left: 2px;
+  top: 2px;
+  right: 4px;
   font-size: 11px;
   color: #ffcb4a;
-  text-shadow: 0 0 3px #000, 0 0 3px #000;
   font-weight: 700;
   pointer-events: none;
+  // Жёсткий чёрный контур + плотные тени, чтобы золотое «+12» читалось
+  // и поверх светлых иконок, и поверх золотых деталей. Сначала рисуем
+  // обводку (paint-order: stroke fill — обводка уходит под заливку).
+  -webkit-text-stroke: 0.6px #000;
+  paint-order: stroke fill;
+  text-shadow:
+    -1px -1px 0 #000,
+     1px -1px 0 #000,
+    -1px  1px 0 #000,
+     1px  1px 0 #000,
+     0    0   3px rgba(0, 0, 0, 0.95),
+     0    1px 3px rgba(0, 0, 0, 0.85);
 }
 
 .slotEmptyLabel {
