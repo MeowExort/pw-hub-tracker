@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { EquipItem, EquipmentSnapshot } from '@/shared/types/loadout'
+import type {EquipItem, EquipmentSnapshot, ItemEssence} from '@/shared/types/loadout'
 import {
   MAIN_LAYOUT,
   POKER_SLOTS,
@@ -191,26 +191,42 @@ function SlotInner({
 function badgeFor(item: EquipItem): string | null {
   if (item.card) {
     const stars = '★'.repeat(Math.min(item.card.rebirthTimes, 3))
-    return `Lv${item.card.level}${stars}`
+    return `${stars}`
   }
-  if (item.astrolabe) return `Lv${item.astrolabe.level}`
-  if (item.atlas) return `Lv${item.atlas.currentLevel}`
+  if (item.astrolabe) return `Lv ${item.astrolabe.level}`
   return null
 }
 
 function refineFor(item: EquipItem): number | null {
   if (!item.body?.properties?.length) return null
+  let refineAddonId = essenceLevelupAddonId(item.essence);
+  if (refineAddonId === null) {
+    for (const p of item.body.properties) {
+      if (
+          p.params.length >= 2 &&
+          p.params[1] >= 1 &&
+          p.params[1] <= 12 &&
+          !p.isEmbed &&
+          !p.isEngraved
+      ) {
+        return p.params[1]
+      }
+    }
+  }
   for (const p of item.body.properties) {
-    if (
-      p.params.length >= 2 &&
-      p.params[1] >= 1 &&
-      p.params[1] <= 12 &&
-      !p.isEmbed &&
-      !p.isEngraved
-    ) {
-      return p.params[1]
+    if (p.addonId === refineAddonId) {
+      return p.params[1];
     }
   }
   return null
 }
 
+function essenceLevelupAddonId(essence?: ItemEssence): number | null {
+  if (!essence) return null
+  return (
+      essence.weapon?.levelupAddonId ??
+      essence.armor?.levelupAddonId ??
+      essence.decoration?.levelupAddonId ??
+      null
+  )
+}

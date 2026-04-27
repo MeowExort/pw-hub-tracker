@@ -94,7 +94,11 @@ export function ItemDetailsPanel({ item, embedded }: Props) {
               ? decodeUnicodeEscapes(embed.addonName) ?? `addon #${embed.addonId}`
               : null
             const value = embed
-              ? embed.displayValue ?? (embed.computedValue !== undefined ? `+${embed.computedValue}` : '')
+              ? (
+                  embed.params.length === 2
+                      ? `+${embed.params[0]}/+${embed.params[1]}`
+                      : embed.displayValue ?? (embed.computedValue !== undefined ? `+${embed.computedValue}` : '')
+                )
               : null
             return (
               <div key={i} className={styles.dStone}>
@@ -379,7 +383,6 @@ function PropertiesBlock({
  * его описание. Уровень выводим рядом с именем как в игровом UI.
  */
 function SkillAddonRow({ property }: { property: import('@/shared/types/loadout').ItemProperty }) {
-  const level = property.skillLevel ?? 0
   const rawName = property.skillNameColored || property.skillName || `Навык #${property.skillId}`
   const decodedName = decodeUnicodeEscapes(rawName) ?? rawName
   const decodedDesc = decodeUnicodeEscapes(property.skillDescription ?? undefined)
@@ -389,7 +392,6 @@ function SkillAddonRow({ property }: { property: import('@/shared/types/loadout'
         {/* ItemDescription парсит ^rrggbb-цвета из NameColored. Если у скилла
             раскраски нет — компонент просто покажет имя без оформления. */}
         <ItemDescription text={decodedName} className={styles.dSkillAddonName} />
-        {level > 0 && <span className={styles.dSkillAddonLevel}>ур. {level}</span>}
       </div>
       {decodedDesc && (
         <ItemDescription text={decodedDesc} className={styles.dSkillAddonDesc} />
@@ -399,7 +401,7 @@ function SkillAddonRow({ property }: { property: import('@/shared/types/loadout'
 }
 
 function SoulBlock({ soul }: { soul: NonNullable<NonNullable<EquipItem['body']>['soul']> }) {
-  const phaseLabel = soul.unlockedPhase > 0 ? `фаза ${phaseName(soul.unlockedPhase)} ${soul.maxPhase} ранга` : null
+  const phaseLabel = soul.unlockedPhase > 0 ? `фаза ${phaseName(soul.unlockedPhase)} ${soul.unlockedPhase} ранга` : null
   const decodedSoulName = decodeUnicodeEscapes(soul.soulItemName)
   const title = decodedSoulName
     ? `[${stripLeadingStars(decodedSoulName)}${phaseLabel ? ` - ${phaseLabel}` : ''}]`
