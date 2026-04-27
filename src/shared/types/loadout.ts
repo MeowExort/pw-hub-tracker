@@ -196,6 +196,8 @@ export interface WeaponEssence {
   durabilityMax: number
   levelupAddonId?: number
   levelupAddonName?: string
+  /** TypeNumber аддона заточки. */
+  levelupAddonType?: number
   materialNeed: number
 }
 
@@ -234,6 +236,8 @@ export interface ArmorEssence {
   durabilityMax: number
   levelupAddonId?: number
   levelupAddonName?: string
+  /** TypeNumber аддона заточки (200/201 = атака, 202 = защита, 208 = HP, 209 = уклонение и т.п.). */
+  levelupAddonType?: number
   materialNeed: number
   isNewArmor: boolean
   fixedBonusStat?: number
@@ -275,6 +279,8 @@ export interface DecorationEssence {
   durabilityMax: number
   levelupAddonId?: number
   levelupAddonName?: string
+  /** TypeNumber аддона заточки. */
+  levelupAddonType?: number
   materialNeed: number
 }
 

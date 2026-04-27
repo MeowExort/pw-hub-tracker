@@ -169,6 +169,37 @@ function CoreLineWeapon({
   )
 }
 
+/**
+ * Соответствие <c>levelupAddonType</c> (TypeNumber из item_ext_prop.txt) →
+ * к какому из «базовых» статов брони/декора привязан бонус заточки.
+ *
+ * 200 = «Точка: Физ. атака», 201 = маг. атака, 202 = защита,
+ * 203..207 = защиты от стихий, 208 = здоровье, 209 = уклонение,
+ * 210 = защита от стихий (общая), 211 = физ. + маг. атака, 212 = защита + маг. защита.
+ */
+type ArmorRefineSlot =
+  | 'defence'
+  | 'hp'
+  | 'metalDef'
+  | 'evasion'
+  | 'physAtk'
+  | 'magAtk'
+  | null
+
+function refineSlotForType(type?: number): ArmorRefineSlot {
+  switch (type) {
+    case 200: return 'physAtk'
+    case 201: return 'magAtk'
+    case 202: return 'defence'
+    case 203: return 'metalDef'
+    case 208: return 'hp'
+    case 209: return 'evasion'
+    case 211: return 'physAtk'
+    case 212: return 'defence'
+    default: return null
+  }
+}
+
 function CoreLineArmor({
   a,
   item,
@@ -179,33 +210,69 @@ function CoreLineArmor({
   refineAddonId: number | null
 }) {
   const enhanced = enhancedValue(item, refineAddonId)
+  const refineSlot = refineSlotForType(a.levelupAddonType)
+  // Строки отрисовываем только если у эссенции реально есть базовое значение,
+  // ИЛИ если именно сюда «уходит» бонус заточки (например, у накидки defence=0,
+  // но levelupAddonType=208 → нужна строка «Здоровье» только из заточки).
+  const showDefence = a.defenceHigh > 0 || refineSlot === 'defence'
+  const showHp = a.hpEnhanceHigh > 0 || refineSlot === 'hp'
+  const showMetalDef = a.metalDefHigh > 0 || refineSlot === 'metalDef'
+  const showEvasion = a.armorEnhanceHigh > 0 || refineSlot === 'evasion'
+
+  // Рисуем строку «{label} +base (+enhanced)» / «{label} +base» / «{label} +enhanced».
+  // Если ни base, ни refine не относятся к этому стату — строка скрыта.
+  const renderStatLine = (
+    label: string,
+    lo: number,
+    hi: number,
+    isRefineTarget: boolean,
+  ) => {
+    const hasBase = hi > 0
+    if (!hasBase && !isRefineTarget) return null
+    if (!hasBase && isRefineTarget && enhanced) {
+      // Чистая заточка: «Здоровье +N» без «(+N)».
+      return (
+        <div className={styles.dRow}>
+          <span className={styles.dValueBaseInline}>
+            {label}{' '}
+          </span>
+          <span className={styles.dValueEnhanced}>+{enhanced}</span>
+        </div>
+      )
+    }
+    const baseStr = lo === hi ? `${lo}` : `${lo}–${hi}`
+    return (
+      <div className={styles.dRow}>
+        <span className={styles.dValueBaseInline}>
+          {label} +{baseStr}
+        </span>
+        {isRefineTarget && enhanced && (
+          <span className={styles.dValueEnhanced}> (+{enhanced})</span>
+        )}
+      </div>
+    )
+  }
+
   return (
     <>
       <div className={styles.dRow}>
         <span>Уровень: </span>
         <span className={styles.dValueBase}>{a.level}</span>
       </div>
-      <div className={styles.dRow}>
-        <span>Защита </span>
-        <span className={styles.dValueBase}>
-          {a.defenceLow === a.defenceHigh ? a.defenceLow : `${a.defenceLow}–${a.defenceHigh}`}
-        </span>
-        {enhanced && <span className={styles.dValueEnhanced}> (+{enhanced})</span>}
-      </div>
-      {a.hpEnhanceHigh > 0 && (
+      {showDefence && (
         <div className={styles.dRow}>
-          <span className={styles.dValueBaseInline}>
-            Здоровье +{a.hpEnhanceLow === a.hpEnhanceHigh ? a.hpEnhanceLow : `${a.hpEnhanceLow}–${a.hpEnhanceHigh}`}
+          <span>Защита </span>
+          <span className={styles.dValueBase}>
+            {a.defenceLow === a.defenceHigh ? a.defenceLow : `${a.defenceLow}–${a.defenceHigh}`}
           </span>
+          {refineSlot === 'defence' && enhanced && (
+            <span className={styles.dValueEnhanced}> (+{enhanced})</span>
+          )}
         </div>
       )}
-      {a.metalDefHigh > 0 && (
-        <div className={styles.dRow}>
-          <span className={styles.dValueBaseInline}>
-            Магическая защита +{a.metalDefLow === a.metalDefHigh ? a.metalDefLow : `${a.metalDefLow}–${a.metalDefHigh}`}
-          </span>
-        </div>
-      )}
+      {showHp && renderStatLine('Здоровье', a.hpEnhanceLow, a.hpEnhanceHigh, refineSlot === 'hp')}
+      {showMetalDef && renderStatLine('Магическая защита', a.metalDefLow, a.metalDefHigh, refineSlot === 'metalDef')}
+      {showEvasion && renderStatLine('Уклонение', a.armorEnhanceLow, a.armorEnhanceHigh, refineSlot === 'evasion')}
     </>
   )
 }
