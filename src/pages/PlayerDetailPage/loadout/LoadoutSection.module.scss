@@ -439,6 +439,17 @@ $gameAccentEnhanced: #1cd45f;
   font-weight: 500;
 }
 
+// Описание из items.Description: парсится через ItemDescription и сохраняет
+// игровые ^rrggbb-цвета. Отделяем от верхней части тонким разделителем.
+.dDescription {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
 /* ── Astrolabe ─────────────────────────────────────────────────────── */
 
 .dAstro {

@@ -24,6 +24,10 @@ export interface EquipItem {
   slotIndex: number
   itemId: number
   itemName?: string
+  /** HEX-цвет имени из items.NameColor (например, «ffcb4a»). */
+  itemNameColor?: string
+  /** Сырое описание из items.Description с PW-кодами цветов (^rrggbb) и \r-переносами. */
+  itemDescription?: string
   amount: number
   procType: number
   expireDate: number

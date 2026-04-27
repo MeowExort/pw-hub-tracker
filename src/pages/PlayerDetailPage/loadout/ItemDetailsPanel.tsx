@@ -1,4 +1,5 @@
 import type { EquipItem, ItemEssence } from '@/shared/types/loadout'
+import { ItemDescription } from '@/shared/ui/ItemDescription'
 import { crystalColorHex, crystalColorName, decodeUnicodeEscapes } from './equipmentSlots'
 import styles from './LoadoutSection.module.scss'
 
@@ -17,11 +18,16 @@ export function ItemDetailsPanel({ item, embedded }: Props) {
   const baseName = decodedName ? stripLeadingStars(decodedName) : `#${item.itemId}`
   const refineAddonId = essenceLevelupAddonId(item.essence)
 
+  // Имя красим в items.NameColor (HEX без «#»). Если бэкенд не отдал цвет —
+  // оставляем дефолтный золотой из стилей (.dName). Звёзды и +заточка цвет наследуют.
+  const nameColor = normalizeHexColor(item.itemNameColor)
+  const nameStyle = nameColor ? { color: `#${nameColor}` } : undefined
+
   return (
     <div className={wrapperClass}>
       <div className={styles.dHeader}>
-        {stars > 0 && <span className={styles.dStars}>{'★'.repeat(stars)}</span>}
-        <span className={styles.dName}>{baseName}</span>
+        {stars > 0 && <span className={styles.dStars} style={nameStyle}>{'★'.repeat(stars)}</span>}
+        <span className={styles.dName} style={nameStyle}>{baseName}</span>
         {holesCount > 0 && <span className={styles.dCells}>(ячеек: {holesCount})</span>}
         {refine !== null && refine > 0 && <span className={styles.dRefine}>+{refine}</span>}
       </div>
@@ -125,6 +131,15 @@ export function ItemDetailsPanel({ item, embedded }: Props) {
         <div className={styles.dMaker}>
           Создатель: {decodeUnicodeEscapes(item.body.makerName)}
         </div>
+      )}
+
+      {/* Описание из items.Description с PW-кодами цветов и \r-переносами —
+          в самом низу тултипа, как на рынке. */}
+      {item.itemDescription && (
+        <ItemDescription
+          text={decodeUnicodeEscapes(item.itemDescription) ?? ''}
+          className={styles.dDescription}
+        />
       )}
     </div>
   )
@@ -688,4 +703,16 @@ function embedAt(item: EquipItem, index: number) {
 function phaseName(phase: number): string {
   const names: Record<number, string> = { 1: 'солнца', 2: 'звезды', 3: 'луны', 4: 'кометы', 5: 'затмения' }
   return names[phase] ?? String(phase)
+}
+
+/**
+ * Бэкенд хранит NameColor как 6-значный hex без «#», иногда с разными регистрами
+ * или с лишними префиксами. Возвращаем «aabbcc» либо <c>null</c>, чтобы корректно
+ * подставить в <c>style.color = '#aabbcc'</c>.
+ */
+function normalizeHexColor(input?: string): string | null {
+  if (!input) return null
+  const trimmed = input.trim().replace(/^#|^0x/i, '')
+  if (!/^[0-9a-fA-F]{6}$/.test(trimmed)) return null
+  return trimmed.toLowerCase()
 }
