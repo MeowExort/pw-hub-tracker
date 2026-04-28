@@ -21,6 +21,7 @@ export function MainLayout() {
                             items={[
                                 { to: '/teams', label: 'Команды' },
                                 { to: '/matches', label: 'Матчи' },
+                                { to: '/arena/live', label: 'Сейчас аренят' },
                             ]}
                         />
                         <NavLink

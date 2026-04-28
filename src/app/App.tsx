@@ -6,6 +6,7 @@ import { TeamDetailPage } from '@/pages/TeamDetailPage'
 import { PlayerDetailPage } from '@/pages/PlayerDetailPage'
 import { MatchesPage } from '@/pages/MatchesPage'
 import { MatchDetailPage } from '@/pages/MatchDetailPage'
+import { LiveArenaPage } from '@/pages/LiveArenaPage'
 import { ClanComparePage } from '@/pages/ClanComparePage'
 import { PlayersPage } from '@/pages/PlayersPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
@@ -50,6 +51,7 @@ export function App() {
             <Route path="/players/:server/:playerId" element={<PlayerDetailPage />} />
             <Route path="/matches" element={<MatchesPage />} />
             <Route path="/matches/:matchId" element={<MatchDetailPage />} />
+            <Route path="/arena/live" element={<LiveArenaPage />} />
             <Route path="/clan-compare" element={<ClanComparePage />} />
             <Route path="/centaur-clan-compare" element={<CentaurClanComparePage />} />
             <Route path="/mizar-clan-compare" element={<MizarClanComparePage />} />

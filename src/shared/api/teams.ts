@@ -7,6 +7,7 @@ import type {
   MatchListItem,
   ScoreHistoryItem,
   TeamH2H,
+  LiveTeam,
 } from '@/shared/types/api'
 
 /** Параметры запроса списка команд */
@@ -79,4 +80,22 @@ export function getTeamScoreHistory(teamId: number, params?: GetScoreHistoryPara
 /** Получить статистику личных встреч (H2H) */
 export function getTeamH2H(teamId: number, opponentTeamId: number, playerId?: number) {
   return apiGet<TeamH2H>(`/api/arena/teams/${teamId}/h2h/${opponentTeamId}`, playerId ? { playerId } : undefined)
+}
+
+/** Параметры запроса live-команд (есть матч за последние N минут) */
+export interface GetLiveTeamsParams {
+  /** Окно «недавности» в минутах. По умолчанию бэк ставит 15. */
+  minutesSince?: number
+  /** `rating` — по убыванию рейтинга, `lastBattle` (default) — по дате последнего боя. */
+  sortBy?: 'rating' | 'lastBattle'
+  page?: number
+  pageSize?: number
+}
+
+/** Команды, которые «сейчас аренят» — был хотя бы один матч в окне minutesSince. */
+export function getLiveTeams(params?: GetLiveTeamsParams) {
+  return apiGet<PaginatedResponse<LiveTeam>>(
+    '/api/arena/teams/live',
+    params as unknown as Record<string, string | number | undefined>,
+  )
 }

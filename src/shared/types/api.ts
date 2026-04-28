@@ -30,6 +30,32 @@ export interface TeamListMember {
   name: string | null
 }
 
+/** Команда из live-выборки «сейчас аренят». */
+export interface LiveTeam {
+  /** Id команды. */
+  id: number
+  name: string
+  zoneId: number
+  memberCount: number
+  /** Текущий рейтинг команды по паттерну её последнего матча (Score / MemberCount). */
+  rating: number
+  /** Паттерн последнего матча (0 = Порядок, 1 = Хаос). */
+  ratingPattern: number
+  /** Когда был последний матч (ISO timestamp). */
+  lastBattleAt: string
+  /** Id последнего матча — для линка «открыть бой». */
+  lastMatchId: number
+  /** Состав ИЗ последнего матча (а не статический roster команды). */
+  members: LiveTeamMember[]
+}
+
+export interface LiveTeamMember {
+  playerId: number
+  playerServer: string
+  cls: number
+  name: string | null
+}
+
 /** Боевая статистика */
 export interface BattleStat {
   matchPattern: number
