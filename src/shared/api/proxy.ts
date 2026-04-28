@@ -13,6 +13,7 @@ import { getFingerprint } from '@/shared/security/fingerprint'
 import { resolveRoute } from '@/shared/security/actions'
 import { getBehaviorHeader } from '@/shared/security/behavior-tracker'
 import { getSessionToken, peekSessionToken, clearSessionToken } from '@/shared/security/session-token'
+import { setServerTime } from '@/shared/security/clock'
 
 /** Ошибка API с HTTP-статусом */
 export class ApiError extends Error {
@@ -47,6 +48,8 @@ export class CaptchaRequiredError extends Error {
 interface PowChallengeResponse {
   challenge: string
   difficulty: number
+  /** Серверное время (Unix ms) — используется для синхронизации часов клиента. */
+  serverTime?: number
 }
 
 interface PowSolution {
@@ -62,7 +65,8 @@ async function obtainPowSolution(): Promise<PowSolution> {
     },
   })
   if (!res.ok) throw new ApiError(res.status, `Не удалось получить PoW challenge: ${res.status}`)
-  const { challenge, difficulty } = (await res.json()) as PowChallengeResponse
+  const { challenge, difficulty, serverTime } = (await res.json()) as PowChallengeResponse
+  if (typeof serverTime === 'number') setServerTime(serverTime)
   const nonce = await solveChallenge(challenge, difficulty)
   return { challenge, nonce }
 }
@@ -116,12 +120,16 @@ async function sendProxyRequest<T>(
 /**
  * Отправляет запрос к API через BFF-прокси, сопоставляя реальный path
  * с зарегистрированным маршрутом (и его обфусцированным actionId).
+ *
+ * @param _retryAfterClockSkew — внутренний флаг, защищает от бесконечного цикла
+ *   при ретрае после ответа `clockSkew: true`.
  */
 export async function proxyRequest<T>(
   method: string,
   path: string,
   params: Record<string, unknown> = {},
   signal?: AbortSignal,
+  _retryAfterClockSkew = false,
 ): Promise<T> {
   const route = resolveRoute(method, path)
   if (!route) {
@@ -158,6 +166,26 @@ export async function proxyRequest<T>(
     limiter?.handleSuccess()
     return result
   } catch (error) {
+    // Реактивная синхронизация часов: сервер сообщил, что timestamp подписи
+    // вышел за окно ±30 сек. Подхватываем serverTime, обновляем offset и
+    // повторяем запрос ровно один раз.
+    if (
+      error instanceof ApiError &&
+      error.status === 403 &&
+      !_retryAfterClockSkew
+    ) {
+      let parsed: { clockSkew?: boolean; serverTime?: number } | null = null
+      try {
+        parsed = JSON.parse(error.message)
+      } catch {
+        // Тело не JSON
+      }
+      if (parsed?.clockSkew && typeof parsed.serverTime === 'number') {
+        setServerTime(parsed.serverTime)
+        return proxyRequest<T>(method, path, params, signal, true)
+      }
+    }
+
     if (error instanceof ApiError && error.status === 429) {
       let retryAfterSec: string | undefined
       try {

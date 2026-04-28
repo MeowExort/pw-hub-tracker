@@ -6,6 +6,7 @@
 
 import { hmacSha256, generateNonce } from './crypto'
 import { getFingerprint } from './fingerprint'
+import { clockNow } from './clock'
 
 /** Секрет подписи — подставляется Vite define при сборке. */
 const SIGNING_SECRET: string = __SIGNING_SECRET__
@@ -37,7 +38,7 @@ export async function createSignedRequest(
   params: Record<string, unknown> = {},
 ): Promise<SignedProxyRequest> {
   const payload = JSON.stringify(params)
-  const timestamp = Date.now()
+  const timestamp = clockNow()
   const nonce = generateNonce()
   const fingerprint = getFingerprint()
 

@@ -11,7 +11,7 @@
  */
 
 import express from 'express'
-import { createHash, createHmac, timingSafeEqual } from 'crypto'
+import { createHash } from 'crypto'
 import { readFileSync } from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -27,6 +27,7 @@ import {
 } from './risk-scorer.js'
 import { difficultyForScore, POW_MIN_DIFFICULTY } from './dynamic-pow.js'
 import { issueSessionToken, verifySessionToken } from './session-token.js'
+import { createSignatureVerifier } from './sign-verify.js'
 import { lookupAsn } from './asn-lookup.js'
 import {
   getVapidPublicKey,
@@ -338,44 +339,14 @@ function verifyPow(challenge, nonce, difficulty) {
   return hash.startsWith(prefix)
 }
 
-// --- Nonce replay-protection (LRU) ---
+// --- Проверка подписи (HMAC + replay через nonce-LRU) ---
 
-const usedNonces = new Map()
-const MAX_NONCES = 10_000
+const signatureVerifier = createSignatureVerifier({ signingSecret })
+const verifySignature = (body, fingerprint) => signatureVerifier.verify(body, fingerprint)
+
 setInterval(() => {
-  const cutoff = Date.now() - 2 * 60_000
-  for (const [n, t] of usedNonces.entries()) {
-    if (t < cutoff) usedNonces.delete(n)
-  }
+  signatureVerifier.purgeExpiredNonces(Date.now())
 }, 30_000).unref?.()
-
-// --- Проверка подписи ---
-
-function verifySignature(body, fingerprint) {
-  if (!signingSecret) return true // нет секрета — выключено
-  const { action, payload, timestamp, nonce, signature } = body
-  if (!action || typeof payload !== 'string' || !timestamp || !nonce || !signature) return false
-
-  const now = Date.now()
-  if (Math.abs(now - Number(timestamp)) > 30_000) return false
-
-  if (usedNonces.has(nonce)) return false
-
-  const input = `${action}:${payload}:${timestamp}:${nonce}:${fingerprint || ''}`
-  const expected = createHmac('sha256', signingSecret).update(input).digest('hex')
-
-  const sigBuf = Buffer.from(String(signature), 'hex')
-  const expBuf = Buffer.from(expected, 'hex')
-  if (sigBuf.length !== expBuf.length) return false
-  if (!timingSafeEqual(sigBuf, expBuf)) return false
-
-  usedNonces.set(nonce, now)
-  if (usedNonces.size > MAX_NONCES) {
-    const firstKey = usedNonces.keys().next().value
-    usedNonces.delete(firstKey)
-  }
-  return true
-}
 
 // --- CAPTCHA ---
 
@@ -476,7 +447,8 @@ app.get('/api/pow-challenge', (req, res) => {
     .digest('hex')
     .slice(0, 32)
   powChallenges.set(challenge, { createdAt: Date.now(), ip, difficulty })
-  res.json({ challenge, difficulty })
+  // serverTime — для синхронизации часов клиента (см. clock.ts на фронте).
+  res.json({ challenge, difficulty, serverTime: Date.now() })
 })
 
 /**
@@ -776,8 +748,18 @@ app.post('/api/proxy', async (req, res) => {
     }
 
     // 4) Подпись
-    if (!verifySignature(body, fp)) {
-      return res.status(403).json({ error: 'Неверная подпись запроса' })
+    const sigCheck = verifySignature(body, fp)
+    if (!sigCheck.ok) {
+      const out = { error: 'Неверная подпись запроса', code: sigCheck.reason }
+      if (sigCheck.reason === 'SIG_BAD_TIMESTAMP') {
+        out.error = 'Несинхронизировано время клиента'
+        out.clockSkew = true
+        out.serverTime = sigCheck.serverTime
+        console.warn(
+          `[BFF SIG] clock skew ip=${ip} fp=${String(fp).slice(0, 8)} skewMs=${sigCheck.skew}`,
+        )
+      }
+      return res.status(403).json(out)
     }
 
     // 5) Slowdown (только для рыночных действий)
