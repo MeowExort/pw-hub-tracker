@@ -136,6 +136,72 @@ export function decodeUnicodeEscapes(input?: string): string | undefined {
   )
 }
 
+/**
+ * Универсальный «addon-like»-объект: всё, что мы умеем рендерить как
+ * «&lt;имя&gt; &lt;значение&gt;» — item-property, soul-phase-stat,
+ * crystal-effect, astrolabe-addon, card-addon, bible-addon. Поля
+ * перечислены по убыванию приоритета формирования значения.
+ */
+export interface AddonLike {
+  addonId?: number
+  addonName?: string
+  /** Только у item-property — массив сырых параметров аддона. */
+  params?: number[]
+  /** Уже отформатированное значение от бэкенда (содержит знак, %, и т.п.). */
+  displayValue?: string
+  /** Численное «вычисленное» значение (для случаев, когда displayValue нет). */
+  computedValue?: number
+  /** Сырое serverValue/value (последний фолбэк). */
+  value?: number
+}
+
+export interface FormattedAddon {
+  name: string
+  value: string
+}
+
+/**
+ * Готовит пару «имя · значение» для аддона по правилам отображения,
+ * договорённым в UI:
+ *
+ *   • Имя с суффиксом `(%)` («Урон навыков (%)») — `(%)` снимаем,
+ *     а к значению дописываем `%` (если процента ещё нет в строке).
+ *     То есть «Урон навыков (%) +5» → «Урон навыков +5%».
+ *
+ *   • Аддон с именем `Заоблачное умение` — значимое значение лежит
+ *     не в displayValue, а в `params[1]`. Печатаем `+params[1]`.
+ *
+ *   • Иначе значение берётся в порядке: `displayValue` →
+ *     `+computedValue` → `+value`.
+ */
+export function formatAddonDisplay(a: AddonLike): FormattedAddon {
+  const decoded =
+    decodeUnicodeEscapes(a.addonName)
+    ?? (a.addonId !== undefined ? `addon #${a.addonId}` : '')
+
+  let name = decoded
+  let value: string
+
+  if (decoded === 'Заоблачное умение' && a.params && a.params.length >= 2) {
+    value = `+${a.params[1]}`
+  } else if (a.displayValue !== undefined) {
+    value = a.displayValue
+  } else if (a.computedValue !== undefined) {
+    value = `+${a.computedValue}`
+  } else if (a.value !== undefined) {
+    value = `+${a.value}`
+  } else {
+    value = ''
+  }
+
+  if (name.endsWith('(%)')) {
+    name = name.slice(0, -3).trimEnd()
+    if (value && !value.includes('%')) value = `${value}%`
+  }
+
+  return { name, value }
+}
+
 const CRYSTAL_COLOR_NAMES = ['Красный', 'Зелёный', 'Синий', 'Лиловый', 'Жёлтый']
 const CRYSTAL_COLOR_HEX = ['#ff6b6b', '#7ad97a', '#5b7ff5', '#b06bff', '#f1c40f']
 

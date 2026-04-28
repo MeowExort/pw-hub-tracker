@@ -42,7 +42,6 @@ function renderWithLineBreaks(text: string): ReactNode[] {
 
 export function ItemDescription({ text, className }: ItemDescriptionProps) {
   const segments = parseSegments(text)
-
   return (
     <div className={className} style={{ whiteSpace: 'pre-wrap' }}>
       {segments.map((seg, i) => (

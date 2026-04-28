@@ -317,7 +317,6 @@ export function PlayersPage() {
 
 /** Строка таблицы игрока */
 function PlayerRow({ player, rank }: { player: PlayerListItem; rank: number }) {
-  console.log('Rendering player row:', player)
   const p = player.properties
   const serverSlug = player.server ?? 'unknown'
   return (

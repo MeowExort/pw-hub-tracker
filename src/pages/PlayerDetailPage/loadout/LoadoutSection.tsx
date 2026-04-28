@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import {
   getEquipmentSnapshot,
   getPlayerLoadoutHistory,
@@ -7,11 +7,15 @@ import {
   getSkillRunesSnapshot,
   getSoulRelicsSnapshot,
 } from '@/shared/api/loadout'
-import { Spinner } from '@/shared/ui/Spinner'
-import { ErrorMessage } from '@/shared/ui/ErrorMessage'
 import { formatDateTime } from '@/shared/utils/format'
 import type { LoadoutTimelineEntry, PlayerLoadoutResponse } from '@/shared/types/loadout'
 import { EquipmentTab } from './EquipmentTab'
+import {
+  MAIN_LAYOUT,
+  POKER_SLOTS,
+  STYLE_SLOTS,
+  slotLabel,
+} from './equipmentSlots'
 import { SkillRunesTab } from './SkillRunesTab'
 import { SoulRelicsTab } from './SoulRelicsTab'
 import styles from './LoadoutSection.module.scss'
@@ -56,6 +60,13 @@ export function LoadoutSection({ server, playerId }: Props) {
       }
       return getPlayerLoadoutLatest(server, playerId)
     },
+    // При смене слепка react-query генерирует новый queryKey → по умолчанию
+    // data сбрасывается в undefined и контент вспыхивает спиннером. С
+    // keepPreviousData предыдущий слепок остаётся на экране, пока новый
+    // фетчится (`isFetching`-флаг). Высота не прыгает, табы не пропадают,
+    // у дропдауна показываем маленький инлайн-спиннер как индикатор фонового
+    // запроса.
+    placeholderData: keepPreviousData,
   })
 
   // Если active tab не имеет данных — переключаемся на первый доступный.
@@ -68,8 +79,15 @@ export function LoadoutSection({ server, playerId }: Props) {
     }
   }, [loadoutQuery.data, tab])
 
+  // Только initial-load (нет ни data, ни placeholderData). На последующих
+  // переключениях слепка `loadoutQuery.data` остаётся прежним до прихода
+  // нового — значит и UI стабилен.
+  const isInitialLoad = loadoutQuery.isPending && !loadoutQuery.data
+  // Идёт фоновое обновление (есть прежний результат, но фетчится свежий).
+  const isRefetching = loadoutQuery.isFetching && !!loadoutQuery.data
+
   return (
-    <div className={styles.section}>
+    <div className={styles.section} aria-busy={loadoutQuery.isFetching || undefined}>
       <div className={styles.header}>
         <h2 className={styles.title}>🛡 Снаряжение</h2>
         {historyQuery.data && historyQuery.data.length > 0 && (
@@ -89,17 +107,38 @@ export function LoadoutSection({ server, playerId }: Props) {
                 </option>
               ))}
             </select>
+            {isRefetching && <span className={styles.timelineLoading} aria-label="Загрузка..." />}
           </div>
         )}
       </div>
 
-      {loadoutQuery.isLoading && <div className={styles.center}><Spinner /></div>}
-      {loadoutQuery.error && (
-        <ErrorMessage message="Не удалось загрузить снаряжение" onRetry={() => loadoutQuery.refetch()} />
-      )}
-      {loadoutQuery.data && (
+      {loadoutQuery.data ? (
         <LoadoutContent data={loadoutQuery.data} tab={tab} onTabChange={setTab} />
-      )}
+      ) : isInitialLoad || loadoutQuery.error ? (
+        <div className={styles.skeletonContainer}>
+          <div
+            className={
+              loadoutQuery.error
+                ? styles.skeletonBlurred
+                : styles.skeletonLoading
+            }
+          >
+            <LoadoutSkeleton />
+          </div>
+          {loadoutQuery.error && (
+            <div className={styles.skeletonOverlay}>
+              <span className={styles.skeletonOverlayText}>Снаряжение не загружено</span>
+              <button
+                type="button"
+                className={styles.skeletonOverlayRetry}
+                onClick={() => loadoutQuery.refetch()}
+              >
+                Повторить
+              </button>
+            </div>
+          )}
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -169,6 +208,75 @@ function TabButton({
     >
       {children}
     </button>
+  )
+}
+
+/**
+ * Скелетон для самой первой загрузки (когда нет ни свежих данных,
+ * ни placeholderData). Рисует «как-будто-табы» (3 disabled-кнопки) и
+ * пустой doll-grid + пустые ряды «Карты генерала» / «Стиль» — с тем же
+ * лэйаутом, что и реальный {@link EquipmentTab}, чтобы при появлении
+ * данных высота секции не прыгала.
+ */
+function LoadoutSkeleton() {
+  return (
+    <>
+      <div className={styles.tabs} role="tablist" aria-busy="true">
+        <button type="button" className={`${styles.tab} ${styles.tabActive}`} disabled>
+          🛡 Экипировка
+        </button>
+        <button type="button" className={styles.tab} disabled>
+          ⚡ Руны
+        </button>
+        <button type="button" className={styles.tab} disabled>
+          💎 Реликвии
+        </button>
+      </div>
+      <div className={styles.equipmentLayout}>
+        <div className={styles.dollGrid}>
+          {MAIN_LAYOUT.map((s, i) => (
+            <div
+              key={i}
+              className={`${styles.slotCell} ${s.index < 0 ? styles.slotReserved : styles.slotEmpty}`}
+              style={{ gridRow: s.row, gridColumn: s.col }}
+              aria-hidden="true"
+            >
+              {s.index >= 0 && (
+                <span className={styles.slotEmptyLabel}>{slotLabel(s.index)}</span>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className={styles.dollSection}>
+          <h3 className={styles.dollSectionTitle}>Карты генерала</h3>
+          <div className={styles.specialRow}>
+            {POKER_SLOTS.map((idx) => (
+              <div
+                key={idx}
+                className={`${styles.slotCell} ${styles.slotEmpty}`}
+                aria-hidden="true"
+              >
+                <span className={styles.slotEmptyLabel}>{slotLabel(idx)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className={styles.dollSection}>
+          <h3 className={styles.dollSectionTitle}>Стиль</h3>
+          <div className={styles.specialRow}>
+            {STYLE_SLOTS.map((idx) => (
+              <div
+                key={idx}
+                className={`${styles.slotCell} ${styles.slotEmpty}`}
+                aria-hidden="true"
+              >
+                <span className={styles.slotEmptyLabel}>{slotLabel(idx)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
   )
 }
 

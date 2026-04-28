@@ -203,13 +203,16 @@ function refineFor(item: EquipItem): number | null {
   if (refineAddonId === null) {
     for (const p of item.body.properties) {
       if (
-          p.params.length >= 2 &&
-          p.params[1] >= 1 &&
-          p.params[1] <= 12 &&
           !p.isEmbed &&
           !p.isEngraved
       ) {
-        return p.params[1]
+          if (item.itemName === 'Поднебесная')
+              console.log(p);
+
+        if (p.params.length >= 2 &&
+            p.params[1] >= 1 &&
+            p.params[1] <= 20)
+            return p.params[1]
       }
     }
   }

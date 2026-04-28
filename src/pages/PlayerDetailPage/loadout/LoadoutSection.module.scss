@@ -282,7 +282,128 @@ $slot-divider: 18px;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  align-items: flex-start;
+  // Центрируем doll-grid и SpecialRow-блоки по горизонтали — раньше было
+  // flex-start (висели слева), а справа от снаряжения был пустой воздух.
+  align-items: center;
+}
+
+/*
+ * Контейнер для skeleton-а на initial-загрузке/ошибке. Если данных нет
+ * вообще, то рисуем пустой лэйаут (см. LoadoutSkeleton). При ошибке —
+ * блурим скелетон фоном и поверх центрируем сообщение «Снаряжение не
+ * загружено» с кнопкой «Повторить».
+ */
+.skeletonContainer {
+  position: relative;
+}
+
+.skeletonBlurred {
+  filter: blur(3px);
+  opacity: 0.45;
+  pointer-events: none;
+  user-select: none;
+}
+
+/*
+ * Initial-load: лёгкий «дыхательный» pulse + светящаяся диагональная полоска,
+ * которая бежит поперёк каждого пустого слота. Стандартный skeleton-screen
+ * паттерн — глаз ловит, что UI «жив» и грузит данные.
+ *
+ * Скоупим строго `.skeletonLoading .slotEmpty`, чтобы не задеть пустые слоты
+ * в реальном лоадауте (когда у игрока какой-то слот фактически пуст).
+ *
+ * .slotEmpty уже `position: relative` (см. .slotCell), тут только overflow,
+ * чтобы shimmer не вылезал за рамку.
+ */
+.skeletonLoading .slotEmpty {
+  animation: skeletonPulse 1.6s ease-in-out infinite;
+  overflow: hidden;
+  position: relative;
+}
+
+.skeletonLoading .slotEmpty::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.07) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  animation: skeletonShimmer 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.95; }
+}
+
+@keyframes skeletonShimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.skeletonOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  padding: var(--space-xl);
+  text-align: center;
+}
+
+.skeletonOverlayText {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text);
+  // Лёгкая «тень-плашка», чтобы текст читался на любом подложке.
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  backdrop-filter: blur(2px);
+}
+
+.skeletonOverlayRetry {
+  appearance: none;
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s;
+
+  &:hover { filter: brightness(1.1); }
+  &:active { filter: brightness(0.9); }
+}
+
+/*
+ * Маленький инлайн-спиннер рядом с дропдауном слепка: показываем
+ * пока активный snapshot перезагружается. Сам контент при этом
+ * остаётся на экране (placeholderData: keepPreviousData), поэтому
+ * индикатор именно «идёт фон-фетч», а не «всё ещё пусто».
+ */
+.timelineLoading {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: timelineSpin 0.8s linear infinite;
+  margin-left: var(--space-xs);
+}
+
+@keyframes timelineSpin {
+  to { transform: rotate(360deg); }
 }
 
 /* ── Tooltip с деталями экипировки ─────────────────────────────────── */
@@ -780,38 +901,165 @@ $gameAccentEnhanced: #1cd45f;
   padding: var(--space-md);
 }
 
-/* ── Skill runes grid ──────────────────────────────────────────────── */
+/* ── Skill runes: два «круга» (page 1 / page 2) гексом по 6 слотов ── */
 
-.runesGrid {
+.runesBoard {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--space-sm);
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+  align-items: start;
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+  }
 }
 
-.runeCard {
+.runesPage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.runesPageTitle {
+  margin: 0 0 var(--space-xs);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.3px;
+}
+
+/*
+ * Гекс: 3×3-сетка с именованными areas. В игре «1» наверху и метки
+ * расходятся по гексагону вокруг центрального индикатора страницы;
+ * сюда индикатор не нужен, поэтому центральная ячейка остаётся пустой.
+ */
+.runesHex {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 72px));
+  grid-template-rows: repeat(3, minmax(0, 72px));
+  grid-template-areas:
+    "topLeft    top       topRight"
+    ".          .         ."
+    "bottomLeft bottom    bottomRight";
+  gap: var(--space-md);
+  width: max-content;
+}
+
+.runesHexCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.runeSlotCard {
+  position: relative;
+  width: 64px;
+  height: 64px;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: var(--space-sm) var(--space-md);
+  overflow: visible;
+}
+
+.runeSlotEmpty {
+  opacity: 0.4;
+  border-style: dashed;
+}
+
+.runeSlotBadge {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--bg-tertiary, var(--bg));
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+}
+
+/*
+ * HoverTooltip оборачивает icon-img в <span class="tooltipWrapper">.
+ * Дефолт у tooltipWrapper зашит под doll-grid (60×60), для рун надо
+ * переопределить — поэтому добавляем специфичный класс рядом и
+ * принудительно ставим нужный размер/позицию.
+ */
+.runeSlotSkillTrigger {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+}
+
+.runeSlotSkillIcon {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+.runeSlotSkillFallback {
+  font-size: 9px;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 4px;
+  word-break: break-word;
+  line-height: 1.1;
+}
+
+/* Руна — мини-иконка в правом-нижнем углу карточки. */
+.runeSlotRuneTrigger {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  width: 26px;
+  height: 26px;
+  z-index: 2;
+  cursor: help;
+  display: inline-flex;
+}
+
+.runeSlotRuneIcon {
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  object-fit: cover;
+}
+
+/* ── Содержимое tooltip-а (skill / rune) ───────────────────────────── */
+
+.skillTooltipBody {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-xs);
+  min-width: 240px;
+  max-width: 360px;
 }
 
-.runeSlotNum {
-  font-size: var(--font-size-xs);
-  color: var(--text-muted);
-}
-
-.runeSkill {
-  font-size: var(--font-size-sm);
+.skillTooltipName {
+  font-size: var(--font-size-md);
   font-weight: 600;
-  color: var(--text);
+  line-height: 1.25;
 }
 
-.runeItem {
-  font-size: var(--font-size-xs);
-  color: var(--primary);
+.skillTooltipDesc {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.35;
 }
 
 /* ── Soul relics: две колонки (Душа Покоя / Душа Тяньюй) с мини-карточками ── */

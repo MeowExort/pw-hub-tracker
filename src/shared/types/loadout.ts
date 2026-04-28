@@ -349,8 +349,18 @@ export interface SkillRuneSlot {
   slot: number
   skillId: number
   skillName?: string
+  /** Имя скилла с PW-кодами цвета (^rrggbb) — для tooltip-заголовка. */
+  skillNameColored?: string
+  /** Сырое описание скилла с PW-кодами цвета и \r-переносами. */
+  skillDescription?: string
+  /** CDN-URL иконки скилла; null, если скилл не нарезан в атласе. */
+  skillIcon?: string
   runeTemplateId: number
   runeItemName?: string
+  /** HEX-цвет имени руны из items.NameColor. */
+  runeItemNameColor?: string
+  /** Сырое описание руны (items.Description) с PW-кодами цвета и \r-переносами. */
+  runeItemDescription?: string
 }
 
 export interface SoulRelicsSnapshot {
