@@ -98,15 +98,14 @@ function RuneSlotCard({ label, slot }: { label: number; slot?: SkillRuneSlot }) 
 
   return (
     <div className={styles.runeSlotCard}>
-      <span className={styles.runeSlotBadge}>{label}</span>
       <HoverTooltip
         className={styles.runeSlotSkillTrigger}
         content={<SkillTooltipContent slot={slot} />}
       >
-        {slot.skillIcon ? (
+        {(slot.skillIconUpscale62 ?? slot.skillIcon) ? (
           <img
             className={styles.runeSlotSkillIcon}
-            src={slot.skillIcon}
+            src={slot.skillIconUpscale62 ?? slot.skillIcon}
             alt={skillTitle}
             loading="lazy"
           />

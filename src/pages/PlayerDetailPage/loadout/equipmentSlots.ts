@@ -117,10 +117,15 @@ export const POKER_SLOTS: number[] = [32, 33, 34, 35, 36, 37]
 /** Слоты стилей / костюмов (нижний ряд №2). */
 export const STYLE_SLOTS: number[] = [29, 13, 14, 15, 16, 17, 25]
 
-/** URL CDN-иконки предмета (конвенция Pw.Hub). */
+/**
+ * URL CDN-иконки предмета. Для отображения в UI берём upscale-вариант
+ * 56×56 — он чётче на ретине и в сетке экипировки. Базовый размер
+ * <c>https://cdn.pw-hub.ru/items/icons/&lt;id&gt;.webp</c> остаётся
+ * залит, но в UI больше не используется.
+ */
 export function itemIconUrl(itemId?: number): string | undefined {
   if (!itemId || itemId <= 0) return undefined
-  return `https://cdn.pw-hub.ru/items/icons/${itemId}.webp`
+  return `https://cdn.pw-hub.ru/items/icons/upscale/56/${itemId}.webp`
 }
 
 /**

@@ -353,8 +353,12 @@ export interface SkillRuneSlot {
   skillNameColored?: string
   /** Сырое описание скилла с PW-кодами цвета и \r-переносами. */
   skillDescription?: string
-  /** CDN-URL иконки скилла; null, если скилл не нарезан в атласе. */
+  /** CDN-URL иконки скилла (базовый размер); null, если скилл не нарезан в атласе. */
   skillIcon?: string
+  /** Upscale-вариант 62×62 — основной для UI. */
+  skillIconUpscale62?: string
+  /** Upscale-вариант 128×128 — для крупного отображения. */
+  skillIconUpscale128?: string
   runeTemplateId: number
   runeItemName?: string
   /** HEX-цвет имени руны из items.NameColor. */
